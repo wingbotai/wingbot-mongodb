@@ -1,0 +1,53 @@
+{
+  "name": "wingbot-mongodb",
+  "version": "1.0.0",
+  "description": "MongoDB storage for wingbot.ai",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "npm run test:lint && npm run test:coverage && npm run test:coverage:threshold",
+    "test:unit": "mocha ./test/**/*.test.js",
+    "test:unit:watch": "npm run test:unit -- --watch",
+    "test:coverage": "nyc --reporter=html mocha --opts ./test/mocha.opts ./test && nyc report",
+    "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 80 --branches 75",
+    "test:lint": "eslint ./src/**/*.js ./bin/**/*.js ./test/**/*.js ",
+    "doc": "node ./bin/makeApiDoc.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/wingbotai/wingbot-mongodb.git"
+  },
+  "keywords": [
+    "wingbot",
+    "messenger",
+    "chatbot",
+    "framework",
+    "mongodb"
+  ],
+  "author": "wingbot.ai",
+  "license": "MIT",
+  "engines": {
+    "node": "^8.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/wingbotai/wingbot-mongodb/issues"
+  },
+  "homepage": "https://github.com/wingbotai/wingbot-mongodb#readme",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-mocha": "^0.4.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-jsdoc": "^3.7.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-mocha": "^5.0.0",
+    "eslint-plugin-react": "^7.8.2",
+    "jsdoc-to-markdown": "^4.0.1",
+    "mocha": "^5.1.1",
+    "mongodb": "^3.0.8",
+    "nyc": "^11.8.0"
+  },
+  "peerDependencies": {
+    "mongodb": ">=2.2.0"
+  },
+  "dependencies": {}
+}
