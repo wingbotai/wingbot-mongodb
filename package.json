@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {

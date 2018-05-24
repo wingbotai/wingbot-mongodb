@@ -66,6 +66,8 @@ describe('<BotTokenStorage>', function () {
     describe('#findByToken()', () => {
 
         it('is able to find token', async () => {
+            bts = new BotTokenStorage(mongodb);
+
             let token = await bts.findByToken('nonexisting');
 
             assert.strictEqual(token, null);

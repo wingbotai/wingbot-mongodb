@@ -46,6 +46,8 @@ describe('<StateStorage>', function () {
     describe('#saveState()', () => {
 
         it('is able to recover state from db and encodes dates', async () => {
+            ss = new StateStorage(mongodb);
+
             const state = {
                 dateTest: new Date(),
                 listTest: [

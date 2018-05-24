@@ -22,6 +22,13 @@ Contains storage for tokens, chat states, bot config and chat logs.
 </dd>
 </dl>
 
+## Typedefs
+
+<dl>
+<dt><a href="#Token">Token</a> : <code>Object</code></dt>
+<dd></dd>
+</dl>
+
 <a name="StateStorage"></a>
 
 ## StateStorage
@@ -32,6 +39,7 @@ Storage for chat states
 * [StateStorage](#StateStorage)
     * [new StateStorage(mongoDb, collectionName)](#new_StateStorage_new)
     * [._collection](#StateStorage+_collection) : <code>mongodb.Collection</code>
+    * [._getCollection()](#StateStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.getOrCreateAndLock(senderId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
     * [.saveState(state)](#StateStorage+saveState) ⇒ <code>Promise.&lt;Object&gt;</code>
 
@@ -41,13 +49,17 @@ Storage for chat states
 
 | Param | Type | Default |
 | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> |  | 
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
 | collectionName | <code>string</code> | <code>&quot;states&quot;</code> | 
 
 <a name="StateStorage+_collection"></a>
 
 ### stateStorage._collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>StateStorage</code>](#StateStorage)  
+<a name="StateStorage+_getCollection"></a>
+
+### stateStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
 <a name="StateStorage+getOrCreateAndLock"></a>
 
 ### stateStorage.getOrCreateAndLock(senderId, [defaultState], [timeout]) ⇒ <code>Promise.&lt;Object&gt;</code>
@@ -83,6 +95,7 @@ Storage for webview tokens
 * [BotTokenStorage](#BotTokenStorage)
     * [new BotTokenStorage(mongoDb, collectionName)](#new_BotTokenStorage_new)
     * [._collection](#BotTokenStorage+_collection) : <code>mongodb.Collection</code>
+    * [._getCollection()](#BotTokenStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.findByToken(token)](#BotTokenStorage+findByToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
     * [.getOrCreateToken(senderId, createToken)](#BotTokenStorage+getOrCreateToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
 
@@ -92,13 +105,17 @@ Storage for webview tokens
 
 | Param | Type | Default |
 | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> |  | 
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
 | collectionName | <code>string</code> | <code>&quot;tokens&quot;</code> | 
 
 <a name="BotTokenStorage+_collection"></a>
 
 ### botTokenStorage._collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>BotTokenStorage</code>](#BotTokenStorage)  
+<a name="BotTokenStorage+_getCollection"></a>
+
+### botTokenStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>BotTokenStorage</code>](#BotTokenStorage)  
 <a name="BotTokenStorage+findByToken"></a>
 
 ### botTokenStorage.findByToken(token) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
@@ -128,6 +145,7 @@ Storage for conversation logs
 * [ChatLogStorage](#ChatLogStorage)
     * [new ChatLogStorage(mongoDb, collectionName, [log])](#new_ChatLogStorage_new)
     * [._collection](#ChatLogStorage+_collection) : <code>mongodb.Collection</code>
+    * [._getCollection()](#ChatLogStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.log(senderId, responses, request)](#ChatLogStorage+log)
 
 <a name="new_ChatLogStorage_new"></a>
@@ -136,7 +154,7 @@ Storage for conversation logs
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> |  |  |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
 | collectionName | <code>string</code> | <code>&quot;chatlogs&quot;</code> |  |
 | [log] | <code>Object</code> |  | console like logger |
 
@@ -144,6 +162,10 @@ Storage for conversation logs
 
 ### chatLogStorage._collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>ChatLogStorage</code>](#ChatLogStorage)  
+<a name="ChatLogStorage+_getCollection"></a>
+
+### chatLogStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
 <a name="ChatLogStorage+log"></a>
 
 ### chatLogStorage.log(senderId, responses, request)
@@ -167,6 +189,7 @@ Storage for wingbot.ai conversation config
 * [BotConfigStorage](#BotConfigStorage)
     * [new BotConfigStorage(mongoDb, collectionName)](#new_BotConfigStorage_new)
     * [._collection](#BotConfigStorage+_collection) : <code>mongodb.Collection</code>
+    * [._getCollection()](#BotConfigStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.invalidateConfig()](#BotConfigStorage+invalidateConfig) ⇒ <code>Promise</code>
     * [.getConfigTimestamp()](#BotConfigStorage+getConfigTimestamp) ⇒ <code>Promise.&lt;number&gt;</code>
     * [.updateConfig(newConfig)](#BotConfigStorage+updateConfig) ⇒ <code>Promise.&lt;T&gt;</code>
@@ -178,13 +201,17 @@ Storage for wingbot.ai conversation config
 
 | Param | Type | Default |
 | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> |  | 
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
 | collectionName | <code>string</code> | <code>&quot;botconfig&quot;</code> | 
 
 <a name="BotConfigStorage+_collection"></a>
 
 ### botConfigStorage._collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+<a name="BotConfigStorage+_getCollection"></a>
+
+### botConfigStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+invalidateConfig"></a>
 
 ### botConfigStorage.invalidateConfig() ⇒ <code>Promise</code>
@@ -209,3 +236,14 @@ Invalidates current configuration
 
 ### botConfigStorage.getConfig() ⇒ <code>Promise.&lt;(Object\|null)&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+<a name="Token"></a>
+
+## Token : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| token | <code>string</code> | 
+

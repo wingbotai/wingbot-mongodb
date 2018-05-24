@@ -14,7 +14,7 @@ class StateStorage {
 
     /**
      *
-     * @param {mongodb.Db} mongoDb
+     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'states') {
@@ -27,9 +27,17 @@ class StateStorage {
         this._collection = null;
     }
 
-    _getCollection () {
+    /**
+     * @returns {Promise<mongodb.Collection>}
+     */
+    async _getCollection () {
         if (this._collection === null) {
-            this._collection = this._mongoDb.collection(this._collectionName);
+            if (typeof this._mongoDb === 'function') {
+                const db = await this._mongoDb();
+                this._collection = db.collection(this._collectionName);
+            } else {
+                this._collection = this._mongoDb.collection(this._collectionName);
+            }
         }
         return this._collection;
     }
@@ -45,7 +53,7 @@ class StateStorage {
     async getOrCreateAndLock (senderId, defaultState = {}, timeout = 300) {
         const now = Date.now();
 
-        const c = this._getCollection();
+        const c = await this._getCollection();
 
         const res = await c.findOneAndUpdate({
             _id: senderId,
@@ -79,7 +87,7 @@ class StateStorage {
             lock: 0
         });
 
-        const c = this._getCollection();
+        const c = await this._getCollection();
 
         await c.updateOne({
             _id: state.senderId

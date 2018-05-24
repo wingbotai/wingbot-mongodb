@@ -33,6 +33,9 @@ describe('<BotConfigStorage>', () => {
 
         assert.strictEqual(ts, savedConfig.timestamp);
 
+        // try another
+        botConfigStorage = new BotConfigStorage(mongodb);
+
         // load config
         const loadedConfig = await botConfigStorage.getConfig();
 

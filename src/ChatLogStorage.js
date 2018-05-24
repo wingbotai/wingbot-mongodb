@@ -14,7 +14,7 @@ class ChatLogStorage {
 
     /**
      *
-     * @param {mongodb.Db} mongoDb
+     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function}} [log] - console like logger
      */
@@ -31,9 +31,17 @@ class ChatLogStorage {
         this.muteErrors = true;
     }
 
-    _getCollection () {
+    /**
+     * @returns {Promise<mongodb.Collection>}
+     */
+    async _getCollection () {
         if (this._collection === null) {
-            this._collection = this._mongoDb.collection(this._collectionName);
+            if (typeof this._mongoDb === 'function') {
+                const db = await this._mongoDb();
+                this._collection = db.collection(this._collectionName);
+            } else {
+                this._collection = this._mongoDb.collection(this._collectionName);
+            }
         }
         return this._collection;
     }
@@ -54,7 +62,7 @@ class ChatLogStorage {
         };
 
         this._getCollection()
-            .insert(log)
+            .then(c => c.insert(log))
             .catch((err) => {
                 this._log.error('Failed to store chat log', err, log);
 
@@ -84,7 +92,7 @@ class ChatLogStorage {
         };
 
         this._getCollection()
-            .insert(log)
+            .then(c => c.insert(log))
             .catch((storeError) => {
                 this._log.error('Failed to store chat log', storeError, log);
 

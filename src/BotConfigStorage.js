@@ -16,7 +16,7 @@ class BotConfigStorage {
 
     /**
      *
-     * @param {mongodb.Db} mongoDb
+     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'botconfig') {
@@ -29,9 +29,17 @@ class BotConfigStorage {
         this._collection = null;
     }
 
-    _getCollection () {
+    /**
+     * @returns {Promise<mongodb.Collection>}
+     */
+    async _getCollection () {
         if (this._collection === null) {
-            this._collection = this._mongoDb.collection(this._collectionName);
+            if (typeof this._mongoDb === 'function') {
+                const db = await this._mongoDb();
+                this._collection = db.collection(this._collectionName);
+            } else {
+                this._collection = this._mongoDb.collection(this._collectionName);
+            }
         }
         return this._collection;
     }
@@ -42,21 +50,22 @@ class BotConfigStorage {
      * @returns {Promise}
      */
     async invalidateConfig () {
-        return this._getCollection()
-            .deleteOne({ _id: CONFIG_ID });
+        const c = await this._getCollection();
+
+        return c.deleteOne({ _id: CONFIG_ID });
     }
 
     /**
      * @returns {Promise<number>}
      */
     async getConfigTimestamp () {
-        const res = await this._getCollection()
-            .findOne({
-                _id: CONFIG_ID
-            }, {
-                limit: 1,
-                projection: { _id: 0, timestamp: 1 }
-            });
+        const c = await this._getCollection();
+        const res = await c.findOne({
+            _id: CONFIG_ID
+        }, {
+            limit: 1,
+            projection: { _id: 0, timestamp: 1 }
+        });
 
         return res ? res.timestamp : 0;
     }
@@ -69,8 +78,9 @@ class BotConfigStorage {
     async updateConfig (newConfig) {
         Object.assign(newConfig, { timestamp: Date.now() });
 
-        await this._getCollection()
-            .replaceOne({ _id: CONFIG_ID }, newConfig, { upsert: true });
+        const c = await this._getCollection();
+
+        await c.replaceOne({ _id: CONFIG_ID }, newConfig, { upsert: true });
 
         return newConfig;
     }
@@ -78,9 +88,10 @@ class BotConfigStorage {
     /**
      * @returns {Promise<Object|null>}
      */
-    getConfig () {
-        return this._getCollection()
-            .findOne({ _id: CONFIG_ID }, { projection: { _id: 0 } });
+    async getConfig () {
+        const c = await this._getCollection();
+
+        return c.findOne({ _id: CONFIG_ID }, { projection: { _id: 0 } });
     }
 
 }

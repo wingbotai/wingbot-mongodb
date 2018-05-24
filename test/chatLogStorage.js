@@ -45,6 +45,8 @@ describe('<ChatLogStorage>', function () {
         });
 
         it('mutes errors', async () => {
+            chl = new ChatLogStorage(mongodb);
+
             await chl.error(new Error('something failed'), SENDER_ID);
         });
 

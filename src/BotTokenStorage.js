@@ -9,6 +9,12 @@ const tokenFactory = require('./tokenFactory');
 const TOKEN_INDEX = 'token-index';
 
 /**
+ * @typedef {Object} Token
+ * @prop {string} senderId
+ * @prop {string} token
+ */
+
+/**
  * Storage for webview tokens
  *
  * @class
@@ -17,7 +23,7 @@ class BotTokenStorage {
 
     /**
      *
-     * @param {mongodb.Db} mongoDb
+     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'tokens') {
@@ -30,9 +36,17 @@ class BotTokenStorage {
         this._collection = null;
     }
 
+    /**
+     * @returns {Promise<mongodb.Collection>}
+     */
     async _getCollection () {
         if (this._collection === null) {
-            this._collection = this._mongoDb.collection(this._collectionName);
+            if (typeof this._mongoDb === 'function') {
+                const db = await this._mongoDb();
+                this._collection = db.collection(this._collectionName);
+            } else {
+                this._collection = this._mongoDb.collection(this._collectionName);
+            }
 
             try {
                 await this._collection.indexExists(TOKEN_INDEX);
