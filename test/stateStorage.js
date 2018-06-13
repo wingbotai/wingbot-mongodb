@@ -9,6 +9,7 @@ const StateStorage = require('../src/StateStorage');
 
 const SENDER_ID = 'hello';
 const SENDER_ID2 = 'hello2';
+const PAGE_ID = 'hello2';
 
 
 describe('<StateStorage>', function () {
@@ -20,6 +21,12 @@ describe('<StateStorage>', function () {
         const db = await mongodb();
 
         ss = new StateStorage(db);
+
+        try {
+            await db.dropCollection(ss._collectionName);
+        } catch (e) {
+            // suppress
+        }
     });
 
     after(() => mongodb(true));
@@ -27,18 +34,44 @@ describe('<StateStorage>', function () {
     describe('#getOrCreateAndLock()', () => {
 
         it('creates state and locks it', async () => {
-            await ss.getOrCreateAndLock(SENDER_ID, {}, 100);
+            let res = await ss.getOrCreateAndLock(SENDER_ID, PAGE_ID, {}, 2000);
 
             let thrownError = null;
 
             try {
-                await ss.getOrCreateAndLock(SENDER_ID, {}, 100);
+                res = await ss.getOrCreateAndLock(SENDER_ID, PAGE_ID, {}, 2000);
             } catch (e) {
                 thrownError = e;
             }
 
             assert.ok(thrownError !== null);
             assert.strictEqual(thrownError.code, 11000);
+
+            assert.strictEqual(typeof res, 'object');
+            assert.strictEqual(res.senderId, SENDER_ID);
+            assert.strictEqual(res.pageId, PAGE_ID);
+            assert.deepStrictEqual(res.state, {});
+        });
+
+    });
+
+    describe('#getState()', () => {
+
+        it('returns zero state', async () => {
+            ss = new StateStorage(mongodb);
+
+            const nonexisting = await ss.getState('nonexisting', 'random');
+
+            assert.strictEqual(nonexisting, null);
+
+            await ss.getOrCreateAndLock('x', PAGE_ID, {}, 500);
+
+            const existing = await ss.getState('x', PAGE_ID);
+
+            assert.strictEqual(typeof existing, 'object');
+            assert.strictEqual(existing.senderId, 'x');
+            assert.strictEqual(existing.pageId, PAGE_ID);
+            assert.deepStrictEqual(existing.state, {});
         });
 
     });
@@ -59,11 +92,12 @@ describe('<StateStorage>', function () {
 
             await ss.saveState({
                 senderId: SENDER_ID2,
+                pageId: PAGE_ID,
                 state,
                 lock: 0
             });
 
-            const savedState = await ss.getOrCreateAndLock(SENDER_ID2, {}, 100);
+            const savedState = await ss.getOrCreateAndLock(SENDER_ID2, PAGE_ID, {}, 100);
 
             assert.deepStrictEqual(savedState.state, state);
         });

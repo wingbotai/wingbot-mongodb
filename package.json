@@ -1,12 +1,13 @@
 {
   "name": "wingbot-mongodb",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
-    "test": "npm run test:lint && npm run test:coverage && npm run test:coverage:threshold",
+    "test": "npm run test:lint && npm run test:cosmos && npm run test:coverage && npm run test:coverage:threshold",
     "test:unit": "mocha ./test/**/*.test.js",
     "test:unit:watch": "npm run test:unit -- --watch",
+    "test:cosmos": "cross-env DB_TYPE=cosmos mocha --opts ./test/mocha.opts ./test",
     "test:coverage": "nyc --reporter=html mocha --opts ./test/mocha.opts ./test && nyc report",
     "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 80 --branches 75",
     "test:lint": "eslint ./src/**/*.js ./bin/**/*.js ./test/**/*.js ",
@@ -33,6 +34,7 @@
   },
   "homepage": "https://github.com/wingbotai/wingbot-mongodb#readme",
   "devDependencies": {
+    "cross-env": "^5.1.6",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-mocha": "^0.4.0",

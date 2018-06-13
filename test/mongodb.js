@@ -7,6 +7,22 @@ const mongodb = require('mongodb');
 
 const CONNECTION_STRING = 'mongodb://127.0.0.1:27017';
 
+let settings;
+if (process.env.DB_TYPE === 'cosmos') {
+    try {
+        settings = module.require('./dbSettings');
+    } catch (e) {
+        console.warn('missing test/dbSettings.js for cosmosdb'); // eslint-disable-line
+    }
+}
+
+if (!settings) {
+    settings = {
+        db: CONNECTION_STRING,
+        options: {}
+    };
+}
+
 let connectedMongoDb;
 
 async function connect (disconnect) {
@@ -21,7 +37,7 @@ async function connect (disconnect) {
     }
 
     if (!connectedMongoDb) {
-        connectedMongoDb = mongodb.connect(CONNECTION_STRING);
+        connectedMongoDb = mongodb.connect(settings.db, settings.options);
     }
 
     return connectedMongoDb

@@ -20,3 +20,5 @@ node_modules
 /html-report
 
 # Dont remove, because it's used in tests
+
+test/dbSettings.js

@@ -7,10 +7,12 @@ const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 const tokenFactory = require('./tokenFactory');
 
 const TOKEN_INDEX = 'token-index';
+const USER_INDEX = 'user-page-index';
 
 /**
  * @typedef {Object} Token
  * @prop {string} senderId
+ * @prop {string} pageId
  * @prop {string} token
  */
 
@@ -47,15 +49,34 @@ class BotTokenStorage {
             } else {
                 this._collection = this._mongoDb.collection(this._collectionName);
             }
-
+            let indexExists;
             try {
-                await this._collection.indexExists(TOKEN_INDEX);
+                indexExists = await this._collection.indexExists(TOKEN_INDEX);
             } catch (e) {
+                indexExists = false;
+            }
+            if (!indexExists) {
                 await this._collection.createIndex({
                     token: 1
                 }, {
                     unique: true,
-                    name: TOKEN_INDEX
+                    name: TOKEN_INDEX,
+                    dropDups: true
+                });
+            }
+            try {
+                indexExists = await this._collection.indexExists(USER_INDEX);
+            } catch (e) {
+                indexExists = false;
+            }
+            if (!indexExists) {
+                await this._collection.createIndex({
+                    senderId: 1,
+                    pageId: 1
+                }, {
+                    unique: true,
+                    name: USER_INDEX,
+                    dropDups: true
                 });
             }
         }
@@ -80,18 +101,20 @@ class BotTokenStorage {
         }
 
         return {
-            senderId: res._id,
-            token: res.token
+            senderId: res.senderId,
+            token: res.token,
+            pageId: res.pageId
         };
     }
 
     /**
      *
      * @param {string} senderId
+     * @param {string} pageId
      * @param {{(): Promise<string>}} createToken
      * @returns {Promise<Token|null>}
      */
-    async getOrCreateToken (senderId, createToken = tokenFactory) {
+    async getOrCreateToken (senderId, pageId, createToken = tokenFactory) {
         if (!senderId) {
             throw new Error('Missing sender ID');
         }
@@ -101,7 +124,7 @@ class BotTokenStorage {
         const c = await this._getCollection();
 
         let res = await c.findOneAndUpdate({
-            _id: senderId
+            senderId, pageId
         }, {
             $setOnInsert: {
                 token: temporaryInsecureToken
@@ -119,13 +142,13 @@ class BotTokenStorage {
 
             Object.assign(res, { token });
 
-            await c.updateOne({ _id: senderId }, { $set: { token } });
+            await c.updateOne({ senderId, pageId }, { $set: { token } });
 
         } else if (res.token.match(/^>[0-9.]+$/)) {
             // probably collision, try it again
             await this._wait(400);
 
-            res = await c.findOne({ _id: senderId });
+            res = await c.findOne({ senderId, pageId });
 
             if (!res) {
                 throw new Error('Cant create token');
@@ -134,7 +157,8 @@ class BotTokenStorage {
 
         return {
             senderId,
-            token: res.token
+            token: res.token,
+            pageId
         };
     }
 

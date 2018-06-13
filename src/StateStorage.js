@@ -5,6 +5,15 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
+const USER_INDEX = 'user-page-index';
+
+/**
+ * @typedef {Object} State
+ * @prop {string} senderId
+ * @prop {string} pageId
+ * @prop {Object} state
+ */
+
 /**
  * Storage for chat states
  *
@@ -38,39 +47,77 @@ class StateStorage {
             } else {
                 this._collection = this._mongoDb.collection(this._collectionName);
             }
+            let indexExists;
+            try {
+                indexExists = await this._collection.indexExists(USER_INDEX);
+            } catch (e) {
+                indexExists = false;
+            }
+            if (!indexExists) {
+                await this._collection.createIndex({
+                    senderId: 1,
+                    pageId: 1
+                }, {
+                    unique: true,
+                    name: USER_INDEX,
+                    dropDups: true
+                });
+            }
         }
         return this._collection;
     }
 
     /**
+     *
+     * @param {string} senderId
+     * @param {string} pageId
+     * @returns {Promise<State|null>}
+     */
+    async getState (senderId, pageId) {
+        const c = await this._getCollection();
+        return c.findOne({ senderId, pageId }, { projection: { _id: 0 } });
+    }
+
+    /**
      * Load state from database and lock it to prevent another reads
      *
-     * @param {any} senderId - sender identifier
+     * @param {string} senderId - sender identifier
+     * @param {string} pageId - page identifier
      * @param {Object} [defaultState] - default state of the conversation
      * @param {number} [timeout=300] - given default state
      * @returns {Promise<Object>} - conversation state
      */
-    async getOrCreateAndLock (senderId, defaultState = {}, timeout = 300) {
+    async getOrCreateAndLock (senderId, pageId, defaultState = {}, timeout = 300) {
         const now = Date.now();
 
         const c = await this._getCollection();
 
+        const $setOnInsert = {
+            senderId,
+            state: defaultState,
+            lastSendError: null,
+            off: false
+        };
+
+        const $set = {
+            lock: now
+        };
+
+        const $lt = now - timeout;
+
         const res = await c.findOneAndUpdate({
-            _id: senderId,
-            lock: { $lt: now - timeout }
+            senderId,
+            pageId,
+            lock: { $lt }
         }, {
-            $setOnInsert: {
-                senderId,
-                state: defaultState,
-                lastSendError: null,
-                off: false
-            },
-            $set: {
-                lock: now
-            }
+            $setOnInsert,
+            $set
         }, {
             upsert: true,
-            returnOriginal: false
+            returnOriginal: false,
+            projection: {
+                _id: 0
+            }
         });
 
         return res.value;
@@ -89,8 +136,10 @@ class StateStorage {
 
         const c = await this._getCollection();
 
+        const { senderId, pageId } = state;
+
         await c.updateOne({
-            _id: state.senderId
+            senderId, pageId
         }, {
             $set: state
         }, {

@@ -25,6 +25,8 @@ Contains storage for tokens, chat states, bot config and chat logs.
 ## Typedefs
 
 <dl>
+<dt><a href="#State">State</a> : <code>Object</code></dt>
+<dd></dd>
 <dt><a href="#Token">Token</a> : <code>Object</code></dt>
 <dd></dd>
 </dl>
@@ -40,7 +42,8 @@ Storage for chat states
     * [new StateStorage(mongoDb, collectionName)](#new_StateStorage_new)
     * [._collection](#StateStorage+_collection) : <code>mongodb.Collection</code>
     * [._getCollection()](#StateStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
-    * [.getOrCreateAndLock(senderId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
+    * [.getState(senderId, pageId)](#StateStorage+getState) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
+    * [.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
     * [.saveState(state)](#StateStorage+saveState) ⇒ <code>Promise.&lt;Object&gt;</code>
 
 <a name="new_StateStorage_new"></a>
@@ -60,9 +63,19 @@ Storage for chat states
 
 ### stateStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
+<a name="StateStorage+getState"></a>
+
+### stateStorage.getState(senderId, pageId) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
+**Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
+
+| Param | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+
 <a name="StateStorage+getOrCreateAndLock"></a>
 
-### stateStorage.getOrCreateAndLock(senderId, [defaultState], [timeout]) ⇒ <code>Promise.&lt;Object&gt;</code>
+### stateStorage.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout]) ⇒ <code>Promise.&lt;Object&gt;</code>
 Load state from database and lock it to prevent another reads
 
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
@@ -70,7 +83,8 @@ Load state from database and lock it to prevent another reads
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| senderId | <code>any</code> |  | sender identifier |
+| senderId | <code>string</code> |  | sender identifier |
+| pageId | <code>string</code> |  | page identifier |
 | [defaultState] | <code>Object</code> |  | default state of the conversation |
 | [timeout] | <code>number</code> | <code>300</code> | given default state |
 
@@ -97,7 +111,7 @@ Storage for webview tokens
     * [._collection](#BotTokenStorage+_collection) : <code>mongodb.Collection</code>
     * [._getCollection()](#BotTokenStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.findByToken(token)](#BotTokenStorage+findByToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
-    * [.getOrCreateToken(senderId, createToken)](#BotTokenStorage+getOrCreateToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
+    * [.getOrCreateToken(senderId, pageId, createToken)](#BotTokenStorage+getOrCreateToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
 
 <a name="new_BotTokenStorage_new"></a>
 
@@ -127,12 +141,13 @@ Storage for webview tokens
 
 <a name="BotTokenStorage+getOrCreateToken"></a>
 
-### botTokenStorage.getOrCreateToken(senderId, createToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
+### botTokenStorage.getOrCreateToken(senderId, pageId, createToken) ⇒ <code>Promise.&lt;(Token\|null)&gt;</code>
 **Kind**: instance method of [<code>BotTokenStorage</code>](#BotTokenStorage)  
 
 | Param | Type |
 | --- | --- |
 | senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
 | createToken | <code>Object</code> | 
 
 <a name="ChatLogStorage"></a>
@@ -236,6 +251,18 @@ Invalidates current configuration
 
 ### botConfigStorage.getConfig() ⇒ <code>Promise.&lt;(Object\|null)&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+<a name="State"></a>
+
+## State : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+| state | <code>Object</code> | 
+
 <a name="Token"></a>
 
 ## Token : <code>Object</code>
@@ -245,5 +272,6 @@ Invalidates current configuration
 | Name | Type |
 | --- | --- |
 | senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
 | token | <code>string</code> | 
 
