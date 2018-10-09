@@ -136,6 +136,7 @@ class BotTokenStorage {
 
         res = res.value;
 
+        // @ts-ignore
         if (res.token === temporaryInsecureToken) {
 
             const token = await createToken();
@@ -144,6 +145,7 @@ class BotTokenStorage {
 
             await c.updateOne({ senderId, pageId }, { $set: { token } });
 
+        // @ts-ignore
         } else if (res.token.match(/^>[0-9.]+$/)) {
             // probably collision, try it again
             await this._wait(400);
@@ -157,6 +159,7 @@ class BotTokenStorage {
 
         return {
             senderId,
+            // @ts-ignore
             token: res.token,
             pageId
         };

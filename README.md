@@ -20,6 +20,9 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dt><a href="#BotConfigStorage">BotConfigStorage</a></dt>
 <dd><p>Storage for wingbot.ai conversation config</p>
 </dd>
+<dt><a href="#AttachmentCache">AttachmentCache</a></dt>
+<dd><p>Cache storage for Facebook attachments</p>
+</dd>
 </dl>
 
 ## Typedefs
@@ -251,6 +254,56 @@ Invalidates current configuration
 
 ### botConfigStorage.getConfig() ⇒ <code>Promise.&lt;(Object\|null)&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+<a name="AttachmentCache"></a>
+
+## AttachmentCache
+Cache storage for Facebook attachments
+
+**Kind**: global class  
+
+* [AttachmentCache](#AttachmentCache)
+    * [new AttachmentCache(mongoDb, collectionName)](#new_AttachmentCache_new)
+    * [._collection](#AttachmentCache+_collection) : <code>mongodb.Collection</code>
+    * [._getCollection()](#AttachmentCache+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [.findAttachmentByUrl(url)](#AttachmentCache+findAttachmentByUrl) ⇒ <code>Promise.&lt;(number\|null)&gt;</code>
+    * [.saveAttachmentId(url, attachmentId)](#AttachmentCache+saveAttachmentId) ⇒ <code>Promise</code>
+
+<a name="new_AttachmentCache_new"></a>
+
+### new AttachmentCache(mongoDb, collectionName)
+
+| Param | Type | Default |
+| --- | --- | --- |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
+| collectionName | <code>string</code> | <code>&quot;attachments&quot;</code> | 
+
+<a name="AttachmentCache+_collection"></a>
+
+### attachmentCache._collection : <code>mongodb.Collection</code>
+**Kind**: instance property of [<code>AttachmentCache</code>](#AttachmentCache)  
+<a name="AttachmentCache+_getCollection"></a>
+
+### attachmentCache._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>AttachmentCache</code>](#AttachmentCache)  
+<a name="AttachmentCache+findAttachmentByUrl"></a>
+
+### attachmentCache.findAttachmentByUrl(url) ⇒ <code>Promise.&lt;(number\|null)&gt;</code>
+**Kind**: instance method of [<code>AttachmentCache</code>](#AttachmentCache)  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+
+<a name="AttachmentCache+saveAttachmentId"></a>
+
+### attachmentCache.saveAttachmentId(url, attachmentId) ⇒ <code>Promise</code>
+**Kind**: instance method of [<code>AttachmentCache</code>](#AttachmentCache)  
+
+| Param | Type |
+| --- | --- |
+| url | <code>string</code> | 
+| attachmentId | <code>number</code> | 
+
 <a name="State"></a>
 
 ## State : <code>Object</code>

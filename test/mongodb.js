@@ -28,7 +28,9 @@ let connectedMongoDb;
 async function connect (disconnect) {
     if (disconnect && !connectedMongoDb) {
         return null;
-    } else if (disconnect) {
+    }
+
+    if (disconnect) {
         return connectedMongoDb
             .then((connection) => {
                 connectedMongoDb = null;
