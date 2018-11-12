@@ -10,6 +10,7 @@ const CONNECTION_STRING = 'mongodb://127.0.0.1:27017';
 let settings;
 if (process.env.DB_TYPE === 'cosmos') {
     try {
+        // @ts-ignore
         settings = module.require('./dbSettings');
     } catch (e) {
         console.warn('missing test/dbSettings.js for cosmosdb'); // eslint-disable-line
@@ -19,7 +20,7 @@ if (process.env.DB_TYPE === 'cosmos') {
 if (!settings) {
     settings = {
         db: CONNECTION_STRING,
-        options: {}
+        options: { useNewUrlParser: true }
     };
 }
 

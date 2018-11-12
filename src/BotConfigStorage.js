@@ -4,6 +4,7 @@
 'use strict';
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+const { apiAuthorizer } = require('wingbot');
 
 const CONFIG_ID = 'config';
 
@@ -42,6 +43,27 @@ class BotConfigStorage {
             }
         }
         return this._collection;
+    }
+
+    /**
+     * Returns botUpdate API for wingbot
+     *
+     * @param {Function} [onUpdate] - async update handler function
+     * @param {Function|string[]} [acl] - acl configuration
+     * @returns {{updateBot:Function}}
+     */
+    api (onUpdate = () => Promise.resolve(), acl) {
+        const storage = this;
+        return {
+            async updateBot (args, ctx) {
+                if (!apiAuthorizer(args, ctx, acl)) {
+                    return null;
+                }
+                await storage.invalidateConfig();
+                await onUpdate();
+                return true;
+            }
+        };
     }
 
     /**

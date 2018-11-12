@@ -62,7 +62,7 @@ class ChatLogStorage {
         };
 
         this._getCollection()
-            .then(c => c.insert(log))
+            .then(c => c.insertOne(log))
             .catch((err) => {
                 this._log.error('Failed to store chat log', err, log);
 
@@ -92,7 +92,7 @@ class ChatLogStorage {
         };
 
         this._getCollection()
-            .then(c => c.insert(log))
+            .then(c => c.insertOne(log))
             .catch((storeError) => {
                 this._log.error('Failed to store chat log', storeError, log);
 
