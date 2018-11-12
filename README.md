@@ -23,6 +23,8 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dt><a href="#AttachmentCache">AttachmentCache</a></dt>
 <dd><p>Cache storage for Facebook attachments</p>
 </dd>
+<dt><a href="#NotificationsStorage">NotificationsStorage</a></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -31,6 +33,14 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dt><a href="#State">State</a> : <code>Object</code></dt>
 <dd></dd>
 <dt><a href="#Token">Token</a> : <code>Object</code></dt>
+<dd></dd>
+<dt><a href="#Target">Target</a> : <code>Object</code></dt>
+<dd></dd>
+<dt><a href="#Subscribtion">Subscribtion</a> : <code>Object</code></dt>
+<dd></dd>
+<dt><a href="#Campaign">Campaign</a> : <code>Object</code></dt>
+<dd></dd>
+<dt><a href="#Task">Task</a> : <code>Object</code></dt>
 <dd></dd>
 </dl>
 
@@ -208,6 +218,7 @@ Storage for wingbot.ai conversation config
     * [new BotConfigStorage(mongoDb, collectionName)](#new_BotConfigStorage_new)
     * [._collection](#BotConfigStorage+_collection) : <code>mongodb.Collection</code>
     * [._getCollection()](#BotConfigStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [.api([onUpdate], [acl])](#BotConfigStorage+api) ⇒ <code>Object</code>
     * [.invalidateConfig()](#BotConfigStorage+invalidateConfig) ⇒ <code>Promise</code>
     * [.getConfigTimestamp()](#BotConfigStorage+getConfigTimestamp) ⇒ <code>Promise.&lt;number&gt;</code>
     * [.updateConfig(newConfig)](#BotConfigStorage+updateConfig) ⇒ <code>Promise.&lt;T&gt;</code>
@@ -230,6 +241,18 @@ Storage for wingbot.ai conversation config
 
 ### botConfigStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+<a name="BotConfigStorage+api"></a>
+
+### botConfigStorage.api([onUpdate], [acl]) ⇒ <code>Object</code>
+Returns botUpdate API for wingbot
+
+**Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [onUpdate] | <code>function</code> | async update handler function |
+| [acl] | <code>function</code> \| <code>Array.&lt;string&gt;</code> | acl configuration |
+
 <a name="BotConfigStorage+invalidateConfig"></a>
 
 ### botConfigStorage.invalidateConfig() ⇒ <code>Promise</code>
@@ -304,6 +327,232 @@ Cache storage for Facebook attachments
 | url | <code>string</code> | 
 | attachmentId | <code>number</code> | 
 
+<a name="NotificationsStorage"></a>
+
+## NotificationsStorage
+**Kind**: global class  
+
+* [NotificationsStorage](#NotificationsStorage)
+    * [new NotificationsStorage(mongoDb, collectionsPrefix)](#new_NotificationsStorage_new)
+    * [._collections](#NotificationsStorage+_collections) : <code>Map.&lt;string, mongodb.Collection&gt;</code>
+    * [._getCollection(collectionName)](#NotificationsStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [.pushTasks(tasks)](#NotificationsStorage+pushTasks) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
+    * [.updateTask(taskId, data)](#NotificationsStorage+updateTask)
+    * [.getSentTask(pageId, senderId, campaignId)](#NotificationsStorage+getSentTask) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
+    * [.updateTasksByWatermark(senderId, pageId, watermark, eventType, ts)](#NotificationsStorage+updateTasksByWatermark) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
+    * [.upsertCampaign(campaign)](#NotificationsStorage+upsertCampaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
+    * [.removeCampaign(campaignId)](#NotificationsStorage+removeCampaign) ⇒ <code>Promise</code>
+    * [.incrementCampaign(campaignId, increment)](#NotificationsStorage+incrementCampaign) ⇒ <code>Promise</code>
+    * [.updateCampaign(campaignId, data)](#NotificationsStorage+updateCampaign) ⇒ <code>Promise.&lt;(Campaign\|null)&gt;</code>
+    * [.popCampaign([now])](#NotificationsStorage+popCampaign) ⇒ <code>Promise.&lt;(Campaign\|null)&gt;</code>
+    * [.getCampaignById(campaignId)](#NotificationsStorage+getCampaignById) ⇒ <code>Promise.&lt;(null\|Campaign)&gt;</code>
+    * [.getCampaignByIds(campaignIds)](#NotificationsStorage+getCampaignByIds) ⇒ <code>Promise.&lt;Array.&lt;Campaign&gt;&gt;</code>
+    * [.getCampaigns(condition, [limit], [lastKey])](#NotificationsStorage+getCampaigns) ⇒ <code>Promise.&lt;{Array.&lt;data:Campaign&gt;, lastKey:string}&gt;</code>
+    * [.subscribe(senderId, pageId, tag)](#NotificationsStorage+subscribe) ⇒ <code>Promise</code>
+    * [.unsubscribe(senderId, pageId, [tag])](#NotificationsStorage+unsubscribe) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
+    * [.getSubscribtionsCount(include, exclude, [pageId])](#NotificationsStorage+getSubscribtionsCount) ⇒ <code>Promise.&lt;number&gt;</code>
+    * [.getSubscribtions(include, exclude, limit, [pageId], lastKey)](#NotificationsStorage+getSubscribtions) ⇒ <code>Promise.&lt;{data: Array.&lt;Target&gt;, lastKey: string}&gt;</code>
+    * [.getSenderSubscribtions(senderId, pageId)](#NotificationsStorage+getSenderSubscribtions) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
+
+<a name="new_NotificationsStorage_new"></a>
+
+### new NotificationsStorage(mongoDb, collectionsPrefix)
+
+| Param | Type |
+| --- | --- |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> | 
+| collectionsPrefix | <code>string</code> | 
+
+<a name="NotificationsStorage+_collections"></a>
+
+### notificationsStorage._collections : <code>Map.&lt;string, mongodb.Collection&gt;</code>
+**Kind**: instance property of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+<a name="NotificationsStorage+_getCollection"></a>
+
+### notificationsStorage._getCollection(collectionName) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| collectionName | <code>string</code> | 
+
+<a name="NotificationsStorage+pushTasks"></a>
+
+### notificationsStorage.pushTasks(tasks) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| tasks | <code>Object</code> | 
+
+<a name="NotificationsStorage+updateTask"></a>
+
+### notificationsStorage.updateTask(taskId, data)
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| taskId | <code>string</code> | 
+| data | <code>Object</code> | 
+
+<a name="NotificationsStorage+getSentTask"></a>
+
+### notificationsStorage.getSentTask(pageId, senderId, campaignId) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
+Get last sent task from campaign
+
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| pageId | <code>string</code> | 
+| senderId | <code>string</code> | 
+| campaignId | <code>string</code> | 
+
+<a name="NotificationsStorage+updateTasksByWatermark"></a>
+
+### notificationsStorage.updateTasksByWatermark(senderId, pageId, watermark, eventType, ts) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+| watermark | <code>number</code> | 
+| eventType | <code>&#x27;read&#x27;</code> \| <code>&#x27;delivery&#x27;</code> | 
+| ts | <code>number</code> | 
+
+<a name="NotificationsStorage+upsertCampaign"></a>
+
+### notificationsStorage.upsertCampaign(campaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaign | <code>Object</code> | 
+
+<a name="NotificationsStorage+removeCampaign"></a>
+
+### notificationsStorage.removeCampaign(campaignId) ⇒ <code>Promise</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaignId | <code>string</code> | 
+
+<a name="NotificationsStorage+incrementCampaign"></a>
+
+### notificationsStorage.incrementCampaign(campaignId, increment) ⇒ <code>Promise</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaignId | <code>string</code> | 
+| increment | <code>Object</code> | 
+
+<a name="NotificationsStorage+updateCampaign"></a>
+
+### notificationsStorage.updateCampaign(campaignId, data) ⇒ <code>Promise.&lt;(Campaign\|null)&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaignId | <code>string</code> | 
+| data | <code>Object</code> | 
+
+<a name="NotificationsStorage+popCampaign"></a>
+
+### notificationsStorage.popCampaign([now]) ⇒ <code>Promise.&lt;(Campaign\|null)&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| [now] | <code>number</code> | 
+
+<a name="NotificationsStorage+getCampaignById"></a>
+
+### notificationsStorage.getCampaignById(campaignId) ⇒ <code>Promise.&lt;(null\|Campaign)&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaignId | <code>string</code> | 
+
+<a name="NotificationsStorage+getCampaignByIds"></a>
+
+### notificationsStorage.getCampaignByIds(campaignIds) ⇒ <code>Promise.&lt;Array.&lt;Campaign&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| campaignIds | <code>Array.&lt;string&gt;</code> | 
+
+<a name="NotificationsStorage+getCampaigns"></a>
+
+### notificationsStorage.getCampaigns(condition, [limit], [lastKey]) ⇒ <code>Promise.&lt;{Array.&lt;data:Campaign&gt;, lastKey:string}&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| condition | <code>Object</code> |  | 
+| [limit] | <code>number</code> | <code></code> | 
+| [lastKey] | <code>Object</code> | <code></code> | 
+
+<a name="NotificationsStorage+subscribe"></a>
+
+### notificationsStorage.subscribe(senderId, pageId, tag) ⇒ <code>Promise</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+| tag | <code>string</code> | 
+
+<a name="NotificationsStorage+unsubscribe"></a>
+
+### notificationsStorage.unsubscribe(senderId, pageId, [tag]) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| senderId | <code>string</code> |  | 
+| pageId | <code>string</code> |  | 
+| [tag] | <code>string</code> | <code>null</code> | 
+
+<a name="NotificationsStorage+getSubscribtionsCount"></a>
+
+### notificationsStorage.getSubscribtionsCount(include, exclude, [pageId]) ⇒ <code>Promise.&lt;number&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| include | <code>Array.&lt;string&gt;</code> |  | 
+| exclude | <code>Array.&lt;string&gt;</code> |  | 
+| [pageId] | <code>string</code> | <code>null</code> | 
+
+<a name="NotificationsStorage+getSubscribtions"></a>
+
+### notificationsStorage.getSubscribtions(include, exclude, limit, [pageId], lastKey) ⇒ <code>Promise.&lt;{data: Array.&lt;Target&gt;, lastKey: string}&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| include | <code>Array.&lt;string&gt;</code> |  | 
+| exclude | <code>Array.&lt;string&gt;</code> |  | 
+| limit | <code>number</code> |  | 
+| [pageId] | <code>string</code> | <code>null</code> | 
+| lastKey | <code>\*</code> | <code></code> | 
+
+<a name="NotificationsStorage+getSenderSubscribtions"></a>
+
+### notificationsStorage.getSenderSubscribtions(senderId, pageId) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+
 <a name="State"></a>
 
 ## State : <code>Object</code>
@@ -327,4 +576,73 @@ Cache storage for Facebook attachments
 | senderId | <code>string</code> | 
 | pageId | <code>string</code> | 
 | token | <code>string</code> | 
+
+<a name="Target"></a>
+
+## Target : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+
+<a name="Subscribtion"></a>
+
+## Subscribtion : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| senderId | <code>string</code> | 
+| pageId | <code>string</code> | 
+| subs | <code>Array.&lt;string&gt;</code> | 
+
+<a name="Campaign"></a>
+
+## Campaign : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| id | <code>string</code> |  |
+| name | <code>string</code> | Tatgeting |
+| include | <code>Array.&lt;string&gt;</code> |  |
+| exclude | <code>Array.&lt;string&gt;</code> | Stats |
+| sent | <code>number</code> |  |
+| succeeded | <code>number</code> |  |
+| failed | <code>number</code> |  |
+| unsubscribed | <code>number</code> |  |
+| delivery | <code>number</code> |  |
+| read | <code>number</code> |  |
+| notSent | <code>number</code> |  |
+| leaved | <code>number</code> |  |
+| queued | <code>number</code> | Interaction |
+| action | <code>string</code> |  |
+| [data] | <code>Object</code> | Setup |
+| sliding | <code>boolean</code> |  |
+| slide | <code>number</code> |  |
+| active | <code>boolean</code> |  |
+| in24hourWindow | <code>boolean</code> |  |
+| startAt | <code>number</code> |  |
+
+<a name="Task"></a>
+
+## Task : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| id | <code>string</code> | 
+| pageId | <code>string</code> | 
+| senderId | <code>string</code> | 
+| campaignId | <code>string</code> | 
+| enqueue | <code>number</code> | 
+| [read] | <code>number</code> | 
+| [delivery] | <code>number</code> | 
+| [sent] | <code>number</code> | 
 

@@ -437,7 +437,7 @@ class NotificationsStorage {
      *
      * @param {string} campaignId
      * @param {Object} increment
-     * @returns {Promise<>}
+     * @returns {Promise}
      */
     async incrementCampaign (campaignId, increment = {}) {
         const c = await this._getCollection(this.campaignsCollection);
