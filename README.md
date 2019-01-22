@@ -339,6 +339,7 @@ Cache storage for Facebook attachments
     * [.pushTasks(tasks)](#NotificationsStorage+pushTasks) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
     * [.updateTask(taskId, data)](#NotificationsStorage+updateTask)
     * [.getSentTask(pageId, senderId, campaignId)](#NotificationsStorage+getSentTask) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
+    * [.getSentCampagnIds(pageId, senderId, checkCampaignIds)](#NotificationsStorage+getSentCampagnIds) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
     * [.updateTasksByWatermark(senderId, pageId, watermark, eventType, ts)](#NotificationsStorage+updateTasksByWatermark) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
     * [.upsertCampaign(campaign)](#NotificationsStorage+upsertCampaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
     * [.removeCampaign(campaignId)](#NotificationsStorage+removeCampaign) ⇒ <code>Promise</code>
@@ -407,6 +408,17 @@ Get last sent task from campaign
 | pageId | <code>string</code> | 
 | senderId | <code>string</code> | 
 | campaignId | <code>string</code> | 
+
+<a name="NotificationsStorage+getSentCampagnIds"></a>
+
+### notificationsStorage.getSentCampagnIds(pageId, senderId, checkCampaignIds) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| pageId | <code>string</code> | 
+| senderId | <code>string</code> | 
+| checkCampaignIds | <code>Array.&lt;string&gt;</code> | 
 
 <a name="NotificationsStorage+updateTasksByWatermark"></a>
 
