@@ -349,6 +349,24 @@ class NotificationsStorage {
 
     /**
      *
+     * @param {string} pageId
+     * @param {string} senderId
+     * @param {string[]} checkCampaignIds
+     * @returns {Promise<string[]>}
+     */
+    async getSentCampagnIds (pageId, senderId, checkCampaignIds) {
+        const c = await this._getCollection(this.taksCollection);
+
+        return c.distinct('campaignId', {
+            pageId,
+            senderId,
+            campaignId: { $in: checkCampaignIds },
+            sent: { $gte: 1 }
+        });
+    }
+
+    /**
+     *
      * @param {string} senderId
      * @param {string} pageId
      * @param {number} watermark
@@ -368,25 +386,22 @@ class NotificationsStorage {
             return [];
         }
 
-        const $in = new Array(tasks.length);
+        const result = await Promise.all(
+            tasks.map(task => c.findOneAndUpdate({
+                _id: task._id,
+                [eventType]: null
+            }, {
+                $set: {
+                    [eventType]: ts
+                }
+            }, {
+                returnOriginal: false
+            }))
+        );
 
-        const res = tasks.map((task, i) => {
-            $in[i] = task._id;
-            Object.assign(task, {
-                [eventType]: ts
-            });
-            return this._mapGenericObject(task);
-        });
-
-        await c.updateMany({
-            _id: { $in }
-        }, {
-            $set: {
-                [eventType]: ts
-            }
-        });
-
-        return res;
+        return result
+            .map(res => (res.value ? this._mapGenericObject(res.value) : null))
+            .filter(r => r !== null);
     }
 
     /**

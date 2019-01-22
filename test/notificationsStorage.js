@@ -205,6 +205,42 @@ describe('<NotificationsStorage>', () => {
 
     });
 
+    describe('#getSentCampagnIds()', () => {
+
+        beforeEach(async () => {
+            await storage.pushTasks([{
+                pageId: '1',
+                senderId: '1',
+                campaignId: '1',
+                sent: null,
+                enqueue: 1
+            }, {
+                pageId: '1',
+                senderId: '1',
+                campaignId: '2',
+                sent: null,
+                enqueue: 2
+            }]);
+
+        });
+
+        it('returns list of campaign ids of sent tasks', async () => {
+            let res = await storage.getSentCampagnIds('1', '1', ['1', '2']);
+
+            assert.deepStrictEqual(res, []);
+
+            const [pop, pop2] = await storage.popTasks(2);
+
+            await storage.updateTask(pop.id, { mid: 123, sent: 5 });
+            await storage.updateTask(pop2.id, { mid: 123, sent: 6 });
+
+            res = await storage.getSentCampagnIds('1', '1', ['1', '2']);
+
+            assert.deepStrictEqual(res, ['1', '2']);
+        });
+
+    });
+
     describe('#upsertCampaign()', () => {
 
         it('creates ID of campaign, when campaign was inserted', async () => {
