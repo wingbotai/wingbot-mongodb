@@ -66,6 +66,7 @@ const { ObjectID } = mongodb;
  * @prop {number} [read]
  * @prop {number} [delivery]
  * @prop {number} [sent]
+ * @prop {number} [insEnqueue]
  */
 
 
@@ -209,7 +210,7 @@ class NotificationsStorage {
             return {
                 updateOne: {
                     filter,
-                    update: { $set },
+                    update: { $set, $setOnInsert: { insEnqueue: task.enqueue } },
                     upsert: true
                 }
             };
@@ -235,22 +236,23 @@ class NotificationsStorage {
 
         if (findMissingIds.length > 0) {
             await Promise.all(findMissingIds
-                .map(({ filter, i }) => c.findOne(filter, { projection: { _id: 1 } })
+                .map(({ filter, i }) => c.findOne(filter, { projection: { _id: 1, insEnqueue: 1 } })
                     .then((found) => {
-                        missingIds.set(i, typeof found._id === 'string'
+                        const id = typeof found._id === 'string'
                             ? found._id
-                            : found._id.toHexString());
+                            : found._id.toHexString();
+                        missingIds.set(i, { id, insEnqueue: found.insEnqueue });
                     })));
         }
 
         return tasks.map((task, i) => {
-            let id;
+            let override;
             if (typeof res.upsertedIds[i] !== 'undefined') {
-                id = res.upsertedIds[i].toHexString();
+                override = { id: res.upsertedIds[i].toHexString(), insEnqueue: task.enqueue };
             } else {
-                id = missingIds.get(i);
+                override = missingIds.get(i);
             }
-            return Object.assign({}, task, { id });
+            return Object.assign({}, task, override);
         });
     }
 
