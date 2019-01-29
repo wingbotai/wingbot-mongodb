@@ -174,7 +174,7 @@ Storage for conversation logs
     * [new ChatLogStorage(mongoDb, collectionName, [log])](#new_ChatLogStorage_new)
     * [._collection](#ChatLogStorage+_collection) : <code>mongodb.Collection</code>
     * [._getCollection()](#ChatLogStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
-    * [.log(senderId, responses, request)](#ChatLogStorage+log)
+    * [.log(senderId, responses, request)](#ChatLogStorage+log) ⇒ <code>Promise</code>
 
 <a name="new_ChatLogStorage_new"></a>
 
@@ -196,7 +196,7 @@ Storage for conversation logs
 **Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
 <a name="ChatLogStorage+log"></a>
 
-### chatLogStorage.log(senderId, responses, request)
+### chatLogStorage.log(senderId, responses, request) ⇒ <code>Promise</code>
 Log single event
 
 **Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
@@ -657,4 +657,5 @@ Get last sent task from campaign
 | [read] | <code>number</code> | 
 | [delivery] | <code>number</code> | 
 | [sent] | <code>number</code> | 
+| [insEnqueue] | <code>number</code> | 
 
