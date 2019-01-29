@@ -52,6 +52,7 @@ class ChatLogStorage {
      * @param {string} senderId
      * @param {Object[]} responses - list of sent responses
      * @param {Object} request - event request
+     * @returns {Promise}
      */
     log (senderId, responses = [], request = {}) {
         const log = {
@@ -61,7 +62,7 @@ class ChatLogStorage {
             responses
         };
 
-        this._getCollection()
+        return this._getCollection()
             .then(c => c.insertOne(log))
             .catch((err) => {
                 this._log.error('Failed to store chat log', err, log);
@@ -81,6 +82,7 @@ class ChatLogStorage {
      * @param {string} senderId
      * @param {Object[]} [responses] - list of sent responses
      * @param {Object} [request] - event request
+     * @returns {Promise}
      */
     error (err, senderId, responses = [], request = {}) {
         const log = {
@@ -91,7 +93,7 @@ class ChatLogStorage {
             err: `${err}`
         };
 
-        this._getCollection()
+        return this._getCollection()
             .then(c => c.insertOne(log))
             .catch((storeError) => {
                 this._log.error('Failed to store chat log', storeError, log);
