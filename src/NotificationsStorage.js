@@ -582,7 +582,7 @@ class NotificationsStorage {
         }
 
         return Promise.resolve({
-            data: data.map(camp => this._mapGenericObject(camp)),
+            data: data.map(camp => this._mapCampaign(camp)),
             lastKey: nextLastKey
         });
     }
