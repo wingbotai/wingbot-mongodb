@@ -210,7 +210,10 @@ class NotificationsStorage {
             return {
                 updateOne: {
                     filter,
-                    update: { $set, $setOnInsert: { insEnqueue: task.enqueue } },
+                    update: {
+                        $set,
+                        $setOnInsert: { insEnqueue: task.enqueue }
+                    },
                     upsert: true
                 }
             };
@@ -236,12 +239,19 @@ class NotificationsStorage {
 
         if (findMissingIds.length > 0) {
             await Promise.all(findMissingIds
-                .map(({ filter, i }) => c.findOne(filter, { projection: { _id: 1, insEnqueue: 1 } })
+                .map(({ filter, i }) => c.findOne(filter, {
+                    projection: { _id: 1, insEnqueue: 1, enqueue: 1 }
+                })
                     .then((found) => {
                         const id = typeof found._id === 'string'
                             ? found._id
                             : found._id.toHexString();
-                        missingIds.set(i, { id, insEnqueue: found.insEnqueue });
+                        missingIds.set(i, {
+                            id,
+                            insEnqueue: found.insEnqueue,
+                            enqueue: found.insEnqueue === found.enqueue
+                                ? found.enqueue + 1 : found.enqueue
+                        });
                     })));
         }
 
