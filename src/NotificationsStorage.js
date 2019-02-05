@@ -212,7 +212,8 @@ class NotificationsStorage {
                     filter,
                     update: {
                         $set,
-                        $setOnInsert: { insEnqueue: task.enqueue }
+                        $inc: { ups: 1 },
+                        $min: { insEnqueue: task.enqueue }
                     },
                     upsert: true
                 }
@@ -240,7 +241,9 @@ class NotificationsStorage {
         if (findMissingIds.length > 0) {
             await Promise.all(findMissingIds
                 .map(({ filter, i }) => c.findOne(filter, {
-                    projection: { _id: 1, insEnqueue: 1, enqueue: 1 }
+                    projection: {
+                        _id: 1, insEnqueue: 1, enqueue: 1, ups: 1
+                    }
                 })
                     .then((found) => {
                         const id = typeof found._id === 'string'
@@ -250,7 +253,9 @@ class NotificationsStorage {
                             id,
                             insEnqueue: found.insEnqueue,
                             enqueue: found.insEnqueue === found.enqueue
-                                ? found.enqueue + 1 : found.enqueue
+                                && found.enqueue !== MAX_TS && found.ups !== 1
+                                ? found.enqueue + 1
+                                : found.enqueue
                         });
                     })));
         }
@@ -299,7 +304,11 @@ class NotificationsStorage {
             const found = await c.findOneAndUpdate({
                 enqueue: { $lte: until }
             }, {
-                $set: { enqueue: MAX_TS }
+                $set: {
+                    enqueue: MAX_TS,
+                    insEnqueue: MAX_TS,
+                    ups: 0
+                }
             }, {
                 sort: { enqueue: 1 },
                 returnOriginal: false
@@ -389,9 +398,11 @@ class NotificationsStorage {
     async updateTasksByWatermark (senderId, pageId, watermark, eventType, ts = Date.now()) {
         const c = await this._getCollection(this.taksCollection);
 
-        const tasks = await c.find({
-            senderId, pageId, sent: { $lte: watermark }, [eventType]: null
-        })
+        const tasks = await c
+            .find({
+                senderId, pageId, sent: { $lte: watermark }, [eventType]: null
+            })
+            .project({ _id: true })
             .toArray();
 
         if (tasks.length === 0) {
