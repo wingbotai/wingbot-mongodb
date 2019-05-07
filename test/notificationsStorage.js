@@ -7,7 +7,7 @@ const assert = require('assert');
 const NotificationsStorage = require('../src/NotificationsStorage');
 const mongodb = require('./mongodb');
 
-describe('<NotificationsStorage>', () => {
+describe('<NotificationsStorage>', function () {
 
     /** @type {NotificationsStorage} */
     let storage;

@@ -51,6 +51,7 @@ const { ObjectID } = mongodb;
  *
  * @prop {boolean} sliding
  * @prop {number} slide
+ * @prop {number} slideRound
  * @prop {boolean} active
  * @prop {boolean} in24hourWindow
  * @prop {number} startAt
@@ -378,12 +379,23 @@ class NotificationsStorage {
     async getSentCampagnIds (pageId, senderId, checkCampaignIds) {
         const c = await this._getCollection(this.taksCollection);
 
-        return c.distinct('campaignId', {
+        const condition = {
             pageId,
             senderId,
             campaignId: { $in: checkCampaignIds },
             sent: { $gte: 1 }
-        });
+        };
+
+        try {
+            const res = await c.distinct('campaignId', condition);
+            return res;
+        } catch (e) {
+            const data = await c.find(condition)
+                .project({ campaignId: 1, _id: 0 })
+                .toArray();
+
+            return data.map(d => d.campaignId);
+        }
     }
 
     /**
