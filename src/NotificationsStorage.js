@@ -740,13 +740,16 @@ class NotificationsStorage {
 
         const cursor = c.find(condition)
             .project({ _id: 1, pageId: 1, senderId: 1 })
-            .sort({ _id: 1 })
-            .limit(limit + 1);
+            .sort({ _id: 1 });
+
+        if (limit) {
+            cursor.limit(limit + 1);
+        }
 
         let data = await cursor.toArray();
 
         let nextLastKey = null;
-        if (data.length > limit) {
+        if (limit && data.length > limit) {
             data = data.slice(0, limit);
 
             const last = data[data.length - 1];
