@@ -68,6 +68,8 @@ const { ObjectID } = mongodb;
  * @prop {number} [delivery]
  * @prop {number} [sent]
  * @prop {number} [insEnqueue]
+ * @prop {boolean} [reaction] - user reacted
+ * @prop {number} [leaved] - time the event was not sent because user left
  */
 
 
@@ -133,6 +135,11 @@ class NotificationsStorage {
                                 pageId: 1, senderId: 1, sent: -1, delivery: 1
                             },
                             options: { name: 'search_by_delivery' }
+                        }, {
+                            index: {
+                                campaignId: 1, leaved: -1, reaction: -1
+                            },
+                            options: { name: 'search_left_or_reacted' }
                         }
                     ]);
                     break;
@@ -327,6 +334,34 @@ class NotificationsStorage {
 
     /**
      *
+     * @param {string} campaignId
+     * @param {boolean} [sentWithoutReaction]
+     * @param {string} [pageId]
+     */
+    async getUnsuccessfulSubscribersByCampaign (
+        campaignId,
+        sentWithoutReaction = false,
+        pageId = null
+    ) {
+
+        const c = await this._getCollection(this.taksCollection);
+
+        const condition = { campaignId, leaved: null };
+
+        if (pageId) Object.assign(condition, { pageId });
+        if (sentWithoutReaction) {
+            Object.assign(condition, { leaved: null, reaction: false });
+        } else {
+            Object.assign(condition, { leaved: { $gt: 0 } });
+        }
+
+        return c.find(condition)
+            .project({ _id: 0, senderId: 1, pageId: 1 })
+            .toArray();
+    }
+
+    /**
+     *
      * @param {string} taskId
      * @param {Object} data
      */
@@ -442,20 +477,30 @@ class NotificationsStorage {
     /**
      *
      * @param {Object} campaign
+     * @param {Object} [updateCampaign]
      * @returns {Promise<Campaign>}
      */
-    async upsertCampaign (campaign) {
+    async upsertCampaign (campaign, updateCampaign = null) {
         const c = await this._getCollection(this.campaignsCollection);
 
         let ret;
         if (campaign.id) {
             const $setOnInsert = Object.assign({}, campaign);
             delete $setOnInsert.id;
+            const update = {};
+            if (Object.keys($setOnInsert).length !== 0) {
+                Object.assign(update, {
+                    $setOnInsert
+                });
+            }
+            if (updateCampaign) {
+                Object.assign(update, {
+                    $set: updateCampaign
+                });
+            }
             const res = await c.findOneAndUpdate({
                 id: campaign.id
-            }, {
-                $setOnInsert
-            }, {
+            }, update, {
                 upsert: true,
                 returnOriginal: false
             });
@@ -463,6 +508,9 @@ class NotificationsStorage {
         } else {
             const id = new ObjectID();
             ret = Object.assign({ id: id.toHexString(), _id: id }, campaign);
+            if (updateCampaign) {
+                Object.assign(ret, updateCampaign);
+            }
             await c.insertOne(ret);
             delete ret._id;
         }
