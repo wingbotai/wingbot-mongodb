@@ -47,7 +47,7 @@
     "mocha": "^6.1.4",
     "mongodb": "^3.2.4",
     "nyc": "^14.1.1",
-    "wingbot": "^2.9.2"
+    "wingbot": "^2.10.0"
   },
   "peerDependencies": {
     "mongodb": ">=3.0.0",
