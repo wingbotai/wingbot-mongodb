@@ -32,6 +32,8 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dl>
 <dt><a href="#State">State</a> : <code>Object</code></dt>
 <dd></dd>
+<dt><a href="#StateCondition">StateCondition</a> : <code>Object</code></dt>
+<dd></dd>
 <dt><a href="#Token">Token</a> : <code>Object</code></dt>
 <dd></dd>
 <dt><a href="#Target">Target</a> : <code>Object</code></dt>
@@ -57,6 +59,7 @@ Storage for chat states
     * [._getCollection()](#StateStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.getState(senderId, pageId)](#StateStorage+getState) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
     * [.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
+    * [.getStates(condition, limit, lastKey)](#StateStorage+getStates) ⇒ <code>Promise.&lt;{Array.&lt;data:State&gt;, lastKey:string}&gt;</code>
     * [.saveState(state)](#StateStorage+saveState) ⇒ <code>Promise.&lt;Object&gt;</code>
 
 <a name="new_StateStorage_new"></a>
@@ -70,11 +73,11 @@ Storage for chat states
 
 <a name="StateStorage+_collection"></a>
 
-### stateStorage._collection : <code>mongodb.Collection</code>
+### stateStorage.\_collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>StateStorage</code>](#StateStorage)  
 <a name="StateStorage+_getCollection"></a>
 
-### stateStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### stateStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
 <a name="StateStorage+getState"></a>
 
@@ -100,6 +103,17 @@ Load state from database and lock it to prevent another reads
 | pageId | <code>string</code> |  | page identifier |
 | [defaultState] | <code>Object</code> |  | default state of the conversation |
 | [timeout] | <code>number</code> | <code>300</code> | given default state |
+
+<a name="StateStorage+getStates"></a>
+
+### stateStorage.getStates(condition, limit, lastKey) ⇒ <code>Promise.&lt;{Array.&lt;data:State&gt;, lastKey:string}&gt;</code>
+**Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| condition | [<code>StateCondition</code>](#StateCondition) |  | 
+| limit | <code>number</code> | <code>20</code> | 
+| lastKey | <code>string</code> | <code>null</code> | 
 
 <a name="StateStorage+saveState"></a>
 
@@ -137,11 +151,11 @@ Storage for webview tokens
 
 <a name="BotTokenStorage+_collection"></a>
 
-### botTokenStorage._collection : <code>mongodb.Collection</code>
+### botTokenStorage.\_collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>BotTokenStorage</code>](#BotTokenStorage)  
 <a name="BotTokenStorage+_getCollection"></a>
 
-### botTokenStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### botTokenStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>BotTokenStorage</code>](#BotTokenStorage)  
 <a name="BotTokenStorage+findByToken"></a>
 
@@ -174,7 +188,8 @@ Storage for conversation logs
     * [new ChatLogStorage(mongoDb, collectionName, [log])](#new_ChatLogStorage_new)
     * [._collection](#ChatLogStorage+_collection) : <code>mongodb.Collection</code>
     * [._getCollection()](#ChatLogStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
-    * [.log(senderId, responses, request)](#ChatLogStorage+log) ⇒ <code>Promise</code>
+    * [.getInteractions(senderId, pageId, [limit], [endAt], [startAt])](#ChatLogStorage+getInteractions)
+    * [.log(senderId, responses, request, [metadata])](#ChatLogStorage+log) ⇒ <code>Promise</code>
 
 <a name="new_ChatLogStorage_new"></a>
 
@@ -188,15 +203,31 @@ Storage for conversation logs
 
 <a name="ChatLogStorage+_collection"></a>
 
-### chatLogStorage._collection : <code>mongodb.Collection</code>
+### chatLogStorage.\_collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>ChatLogStorage</code>](#ChatLogStorage)  
 <a name="ChatLogStorage+_getCollection"></a>
 
-### chatLogStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### chatLogStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
+<a name="ChatLogStorage+getInteractions"></a>
+
+### chatLogStorage.getInteractions(senderId, pageId, [limit], [endAt], [startAt])
+Interate history
+all limits are inclusive
+
+**Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| senderId | <code>string</code> |  |  |
+| pageId | <code>string</code> |  |  |
+| [limit] | <code>number</code> | <code>10</code> |  |
+| [endAt] | <code>number</code> | <code></code> | iterate backwards to history |
+| [startAt] | <code>number</code> | <code></code> | iterate forward to last interaction |
+
 <a name="ChatLogStorage+log"></a>
 
-### chatLogStorage.log(senderId, responses, request) ⇒ <code>Promise</code>
+### chatLogStorage.log(senderId, responses, request, [metadata]) ⇒ <code>Promise</code>
 Log single event
 
 **Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
@@ -206,6 +237,7 @@ Log single event
 | senderId | <code>string</code> |  |
 | responses | <code>Array.&lt;Object&gt;</code> | list of sent responses |
 | request | <code>Object</code> | event request |
+| [metadata] | <code>Object</code> | request metadata |
 
 <a name="BotConfigStorage"></a>
 
@@ -235,11 +267,11 @@ Storage for wingbot.ai conversation config
 
 <a name="BotConfigStorage+_collection"></a>
 
-### botConfigStorage._collection : <code>mongodb.Collection</code>
+### botConfigStorage.\_collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+_getCollection"></a>
 
-### botConfigStorage._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### botConfigStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+api"></a>
 
@@ -267,7 +299,6 @@ Invalidates current configuration
 
 ### botConfigStorage.updateConfig(newConfig) ⇒ <code>Promise.&lt;T&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
-**Template**: T  
 
 | Param | Type |
 | --- | --- |
@@ -302,11 +333,11 @@ Cache storage for Facebook attachments
 
 <a name="AttachmentCache+_collection"></a>
 
-### attachmentCache._collection : <code>mongodb.Collection</code>
+### attachmentCache.\_collection : <code>mongodb.Collection</code>
 **Kind**: instance property of [<code>AttachmentCache</code>](#AttachmentCache)  
 <a name="AttachmentCache+_getCollection"></a>
 
-### attachmentCache._getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### attachmentCache.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>AttachmentCache</code>](#AttachmentCache)  
 <a name="AttachmentCache+findAttachmentByUrl"></a>
 
@@ -337,11 +368,12 @@ Cache storage for Facebook attachments
     * [._collections](#NotificationsStorage+_collections) : <code>Map.&lt;string, mongodb.Collection&gt;</code>
     * [._getCollection(collectionName)](#NotificationsStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.pushTasks(tasks)](#NotificationsStorage+pushTasks) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
+    * [.getUnsuccessfulSubscribersByCampaign(campaignId, [sentWithoutReaction], [pageId])](#NotificationsStorage+getUnsuccessfulSubscribersByCampaign)
     * [.updateTask(taskId, data)](#NotificationsStorage+updateTask)
     * [.getSentTask(pageId, senderId, campaignId)](#NotificationsStorage+getSentTask) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
     * [.getSentCampagnIds(pageId, senderId, checkCampaignIds)](#NotificationsStorage+getSentCampagnIds) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
     * [.updateTasksByWatermark(senderId, pageId, watermark, eventType, ts)](#NotificationsStorage+updateTasksByWatermark) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
-    * [.upsertCampaign(campaign)](#NotificationsStorage+upsertCampaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
+    * [.upsertCampaign(campaign, [updateCampaign])](#NotificationsStorage+upsertCampaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
     * [.removeCampaign(campaignId)](#NotificationsStorage+removeCampaign) ⇒ <code>Promise</code>
     * [.incrementCampaign(campaignId, increment)](#NotificationsStorage+incrementCampaign) ⇒ <code>Promise</code>
     * [.updateCampaign(campaignId, data)](#NotificationsStorage+updateCampaign) ⇒ <code>Promise.&lt;(Campaign\|null)&gt;</code>
@@ -366,11 +398,11 @@ Cache storage for Facebook attachments
 
 <a name="NotificationsStorage+_collections"></a>
 
-### notificationsStorage._collections : <code>Map.&lt;string, mongodb.Collection&gt;</code>
+### notificationsStorage.\_collections : <code>Map.&lt;string, mongodb.Collection&gt;</code>
 **Kind**: instance property of [<code>NotificationsStorage</code>](#NotificationsStorage)  
 <a name="NotificationsStorage+_getCollection"></a>
 
-### notificationsStorage._getCollection(collectionName) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### notificationsStorage.\_getCollection(collectionName) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
 
 | Param | Type |
@@ -385,6 +417,17 @@ Cache storage for Facebook attachments
 | Param | Type |
 | --- | --- |
 | tasks | <code>Object</code> | 
+
+<a name="NotificationsStorage+getUnsuccessfulSubscribersByCampaign"></a>
+
+### notificationsStorage.getUnsuccessfulSubscribersByCampaign(campaignId, [sentWithoutReaction], [pageId])
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| campaignId | <code>string</code> |  | 
+| [sentWithoutReaction] | <code>boolean</code> | <code>false</code> | 
+| [pageId] | <code>string</code> | <code>null</code> | 
 
 <a name="NotificationsStorage+updateTask"></a>
 
@@ -435,12 +478,13 @@ Get last sent task from campaign
 
 <a name="NotificationsStorage+upsertCampaign"></a>
 
-### notificationsStorage.upsertCampaign(campaign) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
+### notificationsStorage.upsertCampaign(campaign, [updateCampaign]) ⇒ [<code>Promise.&lt;Campaign&gt;</code>](#Campaign)
 **Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
 
-| Param | Type |
-| --- | --- |
-| campaign | <code>Object</code> | 
+| Param | Type | Default |
+| --- | --- | --- |
+| campaign | <code>Object</code> |  | 
+| [updateCampaign] | <code>Object</code> | <code></code> | 
 
 <a name="NotificationsStorage+removeCampaign"></a>
 
@@ -577,6 +621,16 @@ Get last sent task from campaign
 | pageId | <code>string</code> | 
 | state | <code>Object</code> | 
 
+<a name="StateCondition"></a>
+
+## StateCondition : <code>Object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| [search] | <code>string</code> | 
+
 <a name="Token"></a>
 
 ## Token : <code>Object</code>
@@ -637,6 +691,7 @@ Get last sent task from campaign
 | [data] | <code>Object</code> | Setup |
 | sliding | <code>boolean</code> |  |
 | slide | <code>number</code> |  |
+| slideRound | <code>number</code> |  |
 | active | <code>boolean</code> |  |
 | in24hourWindow | <code>boolean</code> |  |
 | startAt | <code>number</code> |  |
@@ -647,15 +702,17 @@ Get last sent task from campaign
 **Kind**: global typedef  
 **Properties**
 
-| Name | Type |
-| --- | --- |
-| id | <code>string</code> | 
-| pageId | <code>string</code> | 
-| senderId | <code>string</code> | 
-| campaignId | <code>string</code> | 
-| enqueue | <code>number</code> | 
-| [read] | <code>number</code> | 
-| [delivery] | <code>number</code> | 
-| [sent] | <code>number</code> | 
-| [insEnqueue] | <code>number</code> | 
+| Name | Type | Description |
+| --- | --- | --- |
+| id | <code>string</code> |  |
+| pageId | <code>string</code> |  |
+| senderId | <code>string</code> |  |
+| campaignId | <code>string</code> |  |
+| enqueue | <code>number</code> |  |
+| [read] | <code>number</code> |  |
+| [delivery] | <code>number</code> |  |
+| [sent] | <code>number</code> |  |
+| [insEnqueue] | <code>number</code> |  |
+| [reaction] | <code>boolean</code> | user reacted |
+| [leaved] | <code>number</code> | time the event was not sent because user left |
 
