@@ -5,6 +5,8 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
+const PAGE_SENDER_TIMESTAMP = 'page_sender_timestamp';
+
 /**
  * Storage for conversation logs
  *
@@ -42,8 +44,68 @@ class ChatLogStorage {
             } else {
                 this._collection = this._mongoDb.collection(this._collectionName);
             }
+            let indexExists;
+            try {
+                indexExists = await this._collection.indexExists(PAGE_SENDER_TIMESTAMP);
+            } catch (e) {
+                indexExists = false;
+            }
+            if (!indexExists) {
+                await this._collection.createIndex({
+                    pageId: 1,
+                    senderId: 1,
+                    timestamp: -1
+                }, {
+                    name: PAGE_SENDER_TIMESTAMP
+                });
+            }
         }
         return this._collection;
+    }
+
+    /**
+     * Interate history
+     * all limits are inclusive
+     *
+     * @param {string} senderId
+     * @param {string} pageId
+     * @param {number} [limit]
+     * @param {number} [endAt] - iterate backwards to history
+     * @param {number} [startAt] - iterate forward to last interaction
+     */
+    async getInteractions (senderId, pageId, limit = 10, endAt = null, startAt = null) {
+        const c = await this._getCollection();
+
+        const q = {
+            senderId,
+            pageId
+        };
+
+        const orderBackwards = startAt && !endAt;
+
+        if (startAt || endAt) {
+            Object.assign(q, { timestamp: {} });
+        }
+
+        if (startAt) {
+            Object.assign(q.timestamp, { $gte: startAt });
+        }
+
+        if (endAt) {
+            Object.assign(q.timestamp, { $lte: endAt });
+        }
+
+        const res = await c.find(q)
+            .limit(limit)
+            .sort({ timestamp: orderBackwards ? 1 : -1 })
+            .project({ _id: 0, time: 0 })
+            .toArray();
+
+        if (!orderBackwards) {
+            res.reverse();
+        }
+
+        return res;
     }
 
     /**
@@ -52,15 +114,18 @@ class ChatLogStorage {
      * @param {string} senderId
      * @param {Object[]} responses - list of sent responses
      * @param {Object} request - event request
+     * @param {Object} [metadata] - request metadata
      * @returns {Promise}
      */
-    log (senderId, responses = [], request = {}) {
+    log (senderId, responses = [], request = {}, metadata = {}) {
         const log = {
             senderId,
             time: new Date(request.timestamp || Date.now()),
             request,
             responses
         };
+
+        Object.assign(log, metadata);
 
         return this._getCollection()
             .then(c => c.insertOne(log))
@@ -82,9 +147,10 @@ class ChatLogStorage {
      * @param {string} senderId
      * @param {Object[]} [responses] - list of sent responses
      * @param {Object} [request] - event request
+     * @param {Object} [metadata] - request metadata
      * @returns {Promise}
      */
-    error (err, senderId, responses = [], request = {}) {
+    error (err, senderId, responses = [], request = {}, metadata = {}) {
         const log = {
             senderId,
             time: new Date(request.timestamp || Date.now()),
@@ -92,6 +158,8 @@ class ChatLogStorage {
             responses,
             err: `${err}`
         };
+
+        Object.assign(log, metadata);
 
         return this._getCollection()
             .then(c => c.insertOne(log))

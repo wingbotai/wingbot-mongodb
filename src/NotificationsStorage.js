@@ -662,10 +662,10 @@ class NotificationsStorage {
             })).toString('base64');
         }
 
-        return Promise.resolve({
+        return {
             data: data.map(camp => this._mapCampaign(camp)),
             lastKey: nextLastKey
-        });
+        };
     }
 
     /**

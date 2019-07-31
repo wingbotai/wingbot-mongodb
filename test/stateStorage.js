@@ -9,7 +9,7 @@ const StateStorage = require('../src/StateStorage');
 
 const SENDER_ID = 'hello';
 const SENDER_ID2 = 'hello2';
-const PAGE_ID = 'hello2';
+const PAGE_ID = 'pid';
 
 
 describe('<StateStorage>', function () {
@@ -17,7 +17,7 @@ describe('<StateStorage>', function () {
     /** @type {StateStorage} */
     let ss;
 
-    before(async () => {
+    beforeEach(async () => {
         const db = await mongodb();
 
         ss = new StateStorage(db);
@@ -51,6 +51,8 @@ describe('<StateStorage>', function () {
             assert.strictEqual(res.senderId, SENDER_ID);
             assert.strictEqual(res.pageId, PAGE_ID);
             assert.deepStrictEqual(res.state, {});
+
+            await ss.saveState(res);
         });
 
     });
@@ -100,6 +102,69 @@ describe('<StateStorage>', function () {
             const savedState = await ss.getOrCreateAndLock(SENDER_ID2, PAGE_ID, {}, 100);
 
             assert.deepStrictEqual(savedState.state, state);
+
+            await ss.saveState(savedState);
+        });
+
+    });
+
+    describe('#getStates()', () => {
+
+        let storage;
+        const secondState = { x: 2 };
+        const firstState = { x: 1 };
+        const lastInteraction = new Date(Date.now() - 2000);
+        const lastInteraction2 = new Date(Date.now() - 1000);
+
+        beforeEach(async () => {
+            storage = new StateStorage(mongodb);
+
+            const first = await storage.getOrCreateAndLock(SENDER_ID, PAGE_ID, firstState);
+            const second = await storage.getOrCreateAndLock(SENDER_ID2, PAGE_ID, secondState);
+
+            await storage.saveState(Object.assign({}, first, {
+                lastInteraction
+            }));
+            await storage.saveState(Object.assign({}, second, {
+                lastInteraction: lastInteraction2
+            }));
+        });
+
+        it('should return states by last interaction', async () => {
+            let { data, lastKey } = await storage.getStates({}, 1);
+
+            assert.deepEqual(data, [{
+                pageId: PAGE_ID,
+                senderId: SENDER_ID2,
+                state: data[0].state,
+                lastInteraction: lastInteraction2
+            }]);
+
+            ({ data, lastKey } = await storage.getStates({}, 1, lastKey));
+
+            assert.deepEqual(data, [{
+                pageId: PAGE_ID,
+                senderId: SENDER_ID,
+                state: data[0].state,
+                lastInteraction
+            }]);
+
+            assert.strictEqual(lastKey, null);
+        });
+
+        it('should be able to use search', async () => {
+            const { data, lastKey } = await storage.getStates({
+                search: SENDER_ID2
+            });
+
+            assert.deepEqual(data, [{
+                pageId: PAGE_ID,
+                senderId: SENDER_ID2,
+                state: data[0].state,
+                lastInteraction: lastInteraction2
+            }]);
+
+            assert.strictEqual(lastKey, null);
         });
 
     });

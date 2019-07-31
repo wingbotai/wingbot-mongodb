@@ -19,6 +19,8 @@ describe('<NotificationsStorage>', function () {
 
     after(() => mongodb(true));
 
+    this.timeout(4000);
+
     beforeEach(async () => {
         storage = new NotificationsStorage(db);
 
