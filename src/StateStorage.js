@@ -41,6 +41,7 @@ class StateStorage {
          * @type {mongodb.Collection}
          */
         this._collection = null;
+        this._doesNotSupportTextIndex = false;
     }
 
     /**
@@ -66,7 +67,8 @@ class StateStorage {
                 },
                 {
                     index: { '$**': 'text' },
-                    options: { name: SEARCH }
+                    options: { name: SEARCH },
+                    isTextIndex: true
                 }
             ]);
         }
@@ -88,7 +90,15 @@ class StateStorage {
         await Promise.all(indexes
             .filter(i => !existing.some(e => e.name === i.options.name))
             .map(i => this._collection
-                .createIndex(i.index, i.options)));
+                .createIndex(i.index, i.options)
+                // @ts-ignore
+                .catch((e) => {
+                    if (i.isTextIndex) {
+                        this._doesNotSupportTextIndex = true;
+                    } else {
+                        throw e;
+                    }
+                })));
     }
 
     /**
@@ -177,15 +187,24 @@ class StateStorage {
         const searchStates = typeof condition.search === 'string';
 
         if (searchStates) {
-            Object.assign(useCondition, {
-                $text: { $search: condition.search }
-            });
+            if (this._doesNotSupportTextIndex) {
+                Object.assign(useCondition, {
+                    name: { $regex: condition.search, $options: 'i' }
+                });
+            } else {
+                Object.assign(useCondition, {
+                    $text: { $search: condition.search }
+                });
+            }
             cursor = c
                 .find(useCondition)
                 .limit(limit + 1)
-                .project({ score: { $meta: 'textScore' } })
-                .sort({ score: { $meta: 'textScore' } })
                 .skip(skip);
+            if (!this._doesNotSupportTextIndex) {
+                cursor
+                    .project({ score: { $meta: 'textScore' } })
+                    .sort({ score: { $meta: 'textScore' } });
+            }
         } else {
             cursor = c
                 .find(useCondition)
