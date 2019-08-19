@@ -74,6 +74,7 @@ const { ObjectID } = mongodb;
 
 
 const MAX_TS = 9999999999999;
+const COSMO_LIMIT = 999;
 
 class NotificationsStorage {
 
@@ -355,9 +356,29 @@ class NotificationsStorage {
             Object.assign(condition, { leaved: { $gt: 0 } });
         }
 
-        return c.find(condition)
-            .project({ _id: 0, senderId: 1, pageId: 1 })
-            .toArray();
+        const data = [];
+
+        let hasNext = true;
+        let skip = 0;
+
+        // this is because the cosmodb
+        while (hasNext) {
+            const res = await c.find(condition)
+                .project({ _id: 0, senderId: 1, pageId: 1 })
+                .limit(COSMO_LIMIT)
+                .skip(skip)
+                .toArray();
+
+            data.push(...res);
+
+            if (res.length === COSMO_LIMIT) {
+                skip += COSMO_LIMIT;
+            } else {
+                hasNext = false;
+            }
+        }
+
+        return data;
     }
 
     /**
@@ -786,15 +807,30 @@ class NotificationsStorage {
             });
         }
 
-        const cursor = c.find(condition)
-            .project({ _id: 1, pageId: 1, senderId: 1 })
-            .sort({ _id: 1 });
+        let data = [];
+        let hasNext = true;
+        let skip = 0;
+        const totalLimit = limit || (Number.MAX_SAFE_INTEGER - 1);
+        const useLimit = Math.min(999, totalLimit + 1);
 
-        if (limit) {
-            cursor.limit(limit + 1);
+        // this is because the cosmodb
+        while (hasNext) {
+
+            const cursor = c.find(condition)
+                .project({ _id: 1, pageId: 1, senderId: 1 })
+                .sort({ _id: 1 })
+                .skip(skip)
+                .limit(useLimit);
+
+            const res = await cursor.toArray();
+            data.push(...res);
+
+            if (res.length === useLimit && data.length <= totalLimit) {
+                skip += useLimit;
+            } else {
+                hasNext = false;
+            }
         }
-
-        let data = await cursor.toArray();
 
         let nextLastKey = null;
         if (limit && data.length > limit) {
