@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "2.15.3",
+  "version": "2.16.0-alpha.3",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
@@ -27,7 +27,7 @@
   "author": "wingbot.ai",
   "license": "MIT",
   "engines": {
-    "node": "^8.0.0"
+    "node": ">=8.0.0"
   },
   "bugs": {
     "url": "https://github.com/wingbotai/wingbot-mongodb/issues"

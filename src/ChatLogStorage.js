@@ -5,7 +5,8 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
-const PAGE_SENDER_TIMESTAMP = 'page_sender_timestamp';
+const PAGE_SENDER_TIMESTAMP = 'pageId_1_senderId_1_timestamp_-1';
+const TIMESTAMP = 'timestamp_1';
 
 /**
  * Storage for conversation logs
@@ -19,11 +20,13 @@ class ChatLogStorage {
      * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function}} [log] - console like logger
+     * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionName = 'chatlogs', log = console) {
+    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false) {
         this._mongoDb = mongoDb;
         this._collectionName = collectionName;
         this._log = log;
+        this._isCosmo = isCosmo;
 
         /**
          * @type {mongodb.Collection}
@@ -58,6 +61,21 @@ class ChatLogStorage {
                 }, {
                     name: PAGE_SENDER_TIMESTAMP
                 });
+            }
+            if (this._isCosmo) {
+                let tsIndexExists;
+                try {
+                    tsIndexExists = await this._collection.indexExists(TIMESTAMP);
+                } catch (e) {
+                    tsIndexExists = false;
+                }
+                if (!tsIndexExists) {
+                    await this._collection.createIndex({
+                        timestamp: 1
+                    }, {
+                        name: TIMESTAMP
+                    });
+                }
             }
         }
         return this._collection;

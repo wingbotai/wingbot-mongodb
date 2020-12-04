@@ -5,8 +5,8 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
-const USER_INDEX = 'user-page-index';
-const LAST_INTERACTION_INDEX = 'last-interaction';
+const USER_INDEX = 'senderId_1_pageId_1';
+const LAST_INTERACTION_INDEX = 'lastInteraction_-1';
 const SEARCH = 'search-text';
 
 /**
@@ -32,16 +32,20 @@ class StateStorage {
      *
      * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
+     * @param {{error:Function,log:Function}} [log] - console like logger
+     * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionName = 'states') {
+    constructor (mongoDb, collectionName = 'states', log = console, isCosmo = false) {
         this._mongoDb = mongoDb;
         this._collectionName = collectionName;
+        this._isCosmo = isCosmo;
+        this._log = log;
 
         /**
          * @type {mongodb.Collection}
          */
         this._collection = null;
-        this._doesNotSupportTextIndex = false;
+        this._doesNotSupportTextIndex = isCosmo;
     }
 
     /**
@@ -56,7 +60,7 @@ class StateStorage {
                 this._collection = this._mongoDb.collection(this._collectionName);
             }
 
-            await this._ensureIndexes([
+            const indexes = [
                 {
                     index: { senderId: 1, pageId: 1 },
                     options: { name: USER_INDEX, unique: true, dropDups: true }
@@ -64,13 +68,19 @@ class StateStorage {
                 {
                     index: { lastInteraction: -1 },
                     options: { name: LAST_INTERACTION_INDEX }
-                },
-                {
+                }
+            ];
+
+            if (!this._doesNotSupportTextIndex) {
+                indexes.push({
+                    // @ts-ignore
                     index: { '$**': 'text' },
                     options: { name: SEARCH },
                     isTextIndex: true
-                }
-            ]);
+                });
+            }
+
+            await this._ensureIndexes(indexes);
         }
         return this._collection;
     }
@@ -85,7 +95,15 @@ class StateStorage {
 
         await Promise.all(existing
             .filter(e => !['_id_', '_id'].includes(e.name) && !indexes.some(i => e.name === i.options.name))
-            .map(e => this._collection.dropIndex(e.name)));
+            .map((e) => {
+                // eslint-disable-next-line no-console
+                this._log.log(`dropping index ${e.name}`);
+                return this._collection.dropIndex(e.name)
+                    .catch((err) => {
+                        // eslint-disable-next-line no-console
+                        this._log.error(`dropping index ${e.name} FAILED`, err);
+                    });
+            }));
 
         await Promise.all(indexes
             .filter(i => !existing.some(e => e.name === i.options.name))
