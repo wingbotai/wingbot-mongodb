@@ -6,7 +6,7 @@
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
 const USER_INDEX = 'senderId_1_pageId_1';
-const LAST_INTERACTION_INDEX = 'lastInteraction_-1';
+const LAST_INTERACTION_INDEX = 'lastInteraction_1';
 const SEARCH = 'search-text';
 
 /**
@@ -42,7 +42,7 @@ class StateStorage {
         this._log = log;
 
         /**
-         * @type {mongodb.Collection}
+         * @type {Promise<mongodb.Collection>}
          */
         this._collection = null;
         this._doesNotSupportTextIndex = isCosmo;
@@ -71,7 +71,7 @@ class StateStorage {
                 options: { name: USER_INDEX, unique: true, dropDups: true }
             },
             {
-                index: { lastInteraction: -1 },
+                index: { lastInteraction: this._isCosmo ? 1 : -1 },
                 options: { name: LAST_INTERACTION_INDEX }
             }
         ];
@@ -88,29 +88,58 @@ class StateStorage {
         return [...indexes, ...this._customIndexes];
     }
 
+    async _getOrCreateCollection (name) {
+        const db = typeof this._mongoDb === 'function'
+            ? await this._mongoDb()
+            : this._mongoDb;
+
+        let collection;
+
+        if (this._isCosmo) {
+            const collections = await db.collections();
+
+            collection = collections
+                .find(c => c.collectionName === name);
+
+            if (!collection) {
+                try {
+                    collection = await db.createCollection(name);
+                } catch (e) {
+                    collection = db.collection(name);
+                }
+            }
+
+        } else {
+            collection = db.collection(name);
+        }
+        return collection;
+    }
+
     /**
      * @returns {Promise<mongodb.Collection>}
      */
     async _getCollection () {
         if (this._collection === null) {
-            if (typeof this._mongoDb === 'function') {
-                const db = await this._mongoDb();
-                this._collection = db.collection(this._collectionName);
-            } else {
-                this._collection = this._mongoDb.collection(this._collectionName);
+            let c;
+            try {
+                this._collection = this._getOrCreateCollection(this._collectionName);
+                c = await this._collection;
+            } catch (e) {
+                this._collection = null;
+                throw e;
             }
 
             const indexes = this._getIndexes();
 
-            await this._ensureIndexes(indexes);
+            await this._ensureIndexes(indexes, c);
         }
         return this._collection;
     }
 
-    async _ensureIndexes (indexes) {
+    async _ensureIndexes (indexes, collection) {
         let existing;
         try {
-            existing = await this._collection.indexes();
+            existing = await collection.indexes();
         } catch (e) {
             existing = [];
         }
@@ -120,7 +149,7 @@ class StateStorage {
             .map((e) => {
                 // eslint-disable-next-line no-console
                 this._log.log(`dropping index ${e.name}`);
-                return this._collection.dropIndex(e.name)
+                return collection.dropIndex(e.name)
                     .catch((err) => {
                         // eslint-disable-next-line no-console
                         this._log.error(`dropping index ${e.name} FAILED`, err);
@@ -129,13 +158,14 @@ class StateStorage {
 
         await Promise.all(indexes
             .filter(i => !existing.some(e => e.name === i.options.name))
-            .map(i => this._collection
+            .map(i => collection
                 .createIndex(i.index, i.options)
                 // @ts-ignore
                 .catch((e) => {
                     if (i.isTextIndex) {
                         this._doesNotSupportTextIndex = true;
                     } else {
+                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`);
                         throw e;
                     }
                 })));

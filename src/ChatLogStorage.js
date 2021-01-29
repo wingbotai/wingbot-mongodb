@@ -29,11 +29,38 @@ class ChatLogStorage {
         this._isCosmo = isCosmo;
 
         /**
-         * @type {mongodb.Collection}
+         * @type {Promise<mongodb.Collection>}
          */
         this._collection = null;
 
         this.muteErrors = true;
+    }
+
+    async _getOrCreateCollection (name) {
+        const db = typeof this._mongoDb === 'function'
+            ? await this._mongoDb()
+            : this._mongoDb;
+
+        let collection;
+
+        if (this._isCosmo) {
+            const collections = await db.collections();
+
+            collection = collections
+                .find(c => c.collectionName === name);
+
+            if (!collection) {
+                try {
+                    collection = await db.createCollection(name);
+                } catch (e) {
+                    collection = db.collection(name);
+                }
+            }
+
+        } else {
+            collection = db.collection(name);
+        }
+        return collection;
     }
 
     /**
@@ -41,20 +68,22 @@ class ChatLogStorage {
      */
     async _getCollection () {
         if (this._collection === null) {
-            if (typeof this._mongoDb === 'function') {
-                const db = await this._mongoDb();
-                this._collection = db.collection(this._collectionName);
-            } else {
-                this._collection = this._mongoDb.collection(this._collectionName);
+            let c;
+            try {
+                this._collection = this._getOrCreateCollection(this._collectionName);
+                c = await this._collection;
+            } catch (e) {
+                this._collection = null;
+                throw e;
             }
             let indexExists;
             try {
-                indexExists = await this._collection.indexExists(PAGE_SENDER_TIMESTAMP);
+                indexExists = await c.indexExists(PAGE_SENDER_TIMESTAMP);
             } catch (e) {
                 indexExists = false;
             }
             if (!indexExists) {
-                await this._collection.createIndex({
+                await c.createIndex({
                     pageId: 1,
                     senderId: 1,
                     timestamp: -1
@@ -65,12 +94,12 @@ class ChatLogStorage {
             if (this._isCosmo) {
                 let tsIndexExists;
                 try {
-                    tsIndexExists = await this._collection.indexExists(TIMESTAMP);
+                    tsIndexExists = await c.indexExists(TIMESTAMP);
                 } catch (e) {
                     tsIndexExists = false;
                 }
                 if (!tsIndexExists) {
-                    await this._collection.createIndex({
+                    await c.createIndex({
                         timestamp: 1
                     }, {
                         name: TIMESTAMP

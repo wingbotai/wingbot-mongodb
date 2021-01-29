@@ -82,8 +82,10 @@ class NotificationsStorage {
      *
      * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionsPrefix
+     * @param {{error:Function,log:Function}} [log] - console like logger
+     * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionsPrefix = '') {
+    constructor (mongoDb, collectionsPrefix = '', log, isCosmo = false) {
         this._mongoDb = mongoDb;
 
         this.taksCollection = `${collectionsPrefix}notification-tasks`;
@@ -92,10 +94,40 @@ class NotificationsStorage {
 
         this.subscribtionsCollection = `${collectionsPrefix}notification-subscribtions`;
 
+        this._isCosmo = isCosmo;
+        this._log = log;
+
         /**
-         * @type {Map<string,mongodb.Collection>}
+         * @type {Map<string,Promise<mongodb.Collection>>}
          */
         this._collections = new Map();
+    }
+
+    async _getOrCreateCollection (name) {
+        const db = typeof this._mongoDb === 'function'
+            ? await this._mongoDb()
+            : this._mongoDb;
+
+        let collection;
+
+        if (this._isCosmo) {
+            const collections = await db.collections();
+
+            collection = collections
+                .find(c => c.collectionName === name);
+
+            if (!collection) {
+                try {
+                    collection = await db.createCollection(name);
+                } catch (e) {
+                    collection = db.collection(name);
+                }
+            }
+
+        } else {
+            collection = db.collection(name);
+        }
+        return collection;
     }
 
     /**
@@ -104,15 +136,16 @@ class NotificationsStorage {
      */
     async _getCollection (collectionName) {
         if (!this._collections.has(collectionName)) {
-            /** @type {mongodb.Collection} */
-            let collection;
-            if (typeof this._mongoDb === 'function') {
-                const db = await this._mongoDb();
-                collection = db.collection(collectionName);
-            } else {
-                collection = this._mongoDb.collection(collectionName);
-            }
+            let collection = this._getOrCreateCollection(collectionName);
+
             this._collections.set(collectionName, collection);
+            try {
+                // @ts-ignore
+                collection = await collection;
+            } catch (e) {
+                this._collections.delete(collectionName);
+                throw e;
+            }
 
             // attach indexes
             switch (collectionName) {
@@ -122,36 +155,44 @@ class NotificationsStorage {
                             index: {
                                 pageId: 1, senderId: 1, campaignId: 1, sent: -1
                             },
-                            options: { unique: true, name: 'unique_task' }
+                            options: { unique: true, name: 'pageId_1_senderId_1_campaignId_1_sent_-1' }
                         }, {
                             index: { enqueue: 1 },
-                            options: { name: 'enqueue' }
+                            options: { name: 'enqueue_1' }
                         }, {
                             index: {
                                 pageId: 1, senderId: 1, sent: -1, read: 1
                             },
-                            options: { name: 'search_by_read' }
+                            options: { name: 'pageId_1_senderId_1_sent_-1_read_1' }
                         }, {
                             index: {
                                 pageId: 1, senderId: 1, sent: -1, delivery: 1
                             },
-                            options: { name: 'search_by_delivery' }
+                            options: { name: 'pageId_1_senderId_1_sent_-1_delivery_1' }
                         }, {
                             index: {
                                 campaignId: 1, leaved: -1, reaction: -1
                             },
-                            options: { name: 'search_left_or_reacted' }
-                        }
+                            options: { name: 'campaignId_1_leaved_-1_reaction_-1' }
+                        },
+                        ...(this._isCosmo ? [
+                            {
+                                index: {
+                                    sent: this._isCosmo ? 1 : -1
+                                },
+                                options: { name: 'sent_1' }
+                            }
+                        ] : [])
                     ]);
                     break;
                 case this.subscribtionsCollection:
                     await this._ensureIndexes(collection, [
                         {
                             index: { pageId: 1, senderId: 1 },
-                            options: { unique: true, name: 'subscriber' }
+                            options: { unique: true, name: 'pageId_1_senderId_1' }
                         }, {
                             index: { subs: 1, pageId: 1 },
-                            options: { name: 'subs' }
+                            options: { name: 'subs_1_pageId_1' }
                         }
                     ]);
                     break;
@@ -159,10 +200,10 @@ class NotificationsStorage {
                     await this._ensureIndexes(collection, [
                         {
                             index: { id: 1 },
-                            options: { unique: true, name: 'identifier' }
+                            options: { unique: true, name: 'id_1' }
                         }, {
                             index: { active: -1, startAt: -1 },
-                            options: { name: 'startAt' }
+                            options: { name: 'active_-1_startAt_-1' }
                         }
                     ]);
                     break;
@@ -181,10 +222,31 @@ class NotificationsStorage {
             existing = [];
         }
 
+        await Promise.all(existing
+            .filter(e => !['_id_', '_id'].includes(e.name) && !indexes.some(i => e.name === i.options.name))
+            .map((e) => {
+                // eslint-disable-next-line no-console
+                this._log.log(`dropping index ${e.name}`);
+                return collection.dropIndex(e.name)
+                    .catch((err) => {
+                        // eslint-disable-next-line no-console
+                        this._log.error(`dropping index ${e.name} FAILED`, err);
+                    });
+            }));
+
         await Promise.all(indexes
             .filter(i => !existing.some(e => e.name === i.options.name))
             .map(i => collection
-                .createIndex(i.index, i.options)));
+                .createIndex(i.index, i.options)
+                // @ts-ignore
+                .catch((e) => {
+                    if (i.isTextIndex) {
+                        this._doesNotSupportTextIndex = true;
+                    } else {
+                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`);
+                        throw e;
+                    }
+                })));
     }
 
     /**
