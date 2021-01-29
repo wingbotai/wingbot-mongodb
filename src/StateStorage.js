@@ -46,6 +46,46 @@ class StateStorage {
          */
         this._collection = null;
         this._doesNotSupportTextIndex = isCosmo;
+
+        this._customIndexes = [];
+    }
+
+    /**
+     * Add custom indexing rule
+     *
+     * @param {Object} index
+     * @param {Object} options
+     * @param {string} options.name
+     */
+    addCustomIndex (index, options) {
+        this._customIndexes.push({
+            index,
+            options
+        });
+    }
+
+    _getIndexes () {
+        const indexes = [
+            {
+                index: { senderId: 1, pageId: 1 },
+                options: { name: USER_INDEX, unique: true, dropDups: true }
+            },
+            {
+                index: { lastInteraction: -1 },
+                options: { name: LAST_INTERACTION_INDEX }
+            }
+        ];
+
+        if (!this._doesNotSupportTextIndex) {
+            indexes.push({
+                // @ts-ignore
+                index: { '$**': 'text' },
+                options: { name: SEARCH },
+                isTextIndex: true
+            });
+        }
+
+        return [...indexes, ...this._customIndexes];
     }
 
     /**
@@ -60,25 +100,7 @@ class StateStorage {
                 this._collection = this._mongoDb.collection(this._collectionName);
             }
 
-            const indexes = [
-                {
-                    index: { senderId: 1, pageId: 1 },
-                    options: { name: USER_INDEX, unique: true, dropDups: true }
-                },
-                {
-                    index: { lastInteraction: -1 },
-                    options: { name: LAST_INTERACTION_INDEX }
-                }
-            ];
-
-            if (!this._doesNotSupportTextIndex) {
-                indexes.push({
-                    // @ts-ignore
-                    index: { '$**': 'text' },
-                    options: { name: SEARCH },
-                    isTextIndex: true
-                });
-            }
+            const indexes = this._getIndexes();
 
             await this._ensureIndexes(indexes);
         }
