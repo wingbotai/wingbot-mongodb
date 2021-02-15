@@ -85,7 +85,7 @@ class NotificationsStorage {
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionsPrefix = '', log, isCosmo = false) {
+    constructor (mongoDb, collectionsPrefix = '', log = console, isCosmo = false) {
         this._mongoDb = mongoDb;
 
         this.taksCollection = `${collectionsPrefix}notification-tasks`;
@@ -441,6 +441,24 @@ class NotificationsStorage {
         }
 
         return data;
+    }
+
+    /**
+     * Return Task By Id
+     *
+     * @param {string} taskId
+     * @returns {Promise<Task|null>}
+     */
+    async getTaskById (taskId) {
+        const c = await this._getCollection(this.taksCollection);
+
+        const res = await c.findOne({
+            _id: ObjectID.isValid(taskId)
+                ? ObjectID.createFromHexString(taskId)
+                : taskId
+        });
+
+        return this._mapGenericObject(res);
     }
 
     /**
