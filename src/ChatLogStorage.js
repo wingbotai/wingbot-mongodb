@@ -4,6 +4,7 @@
 'use strict';
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+const BaseStorage = require('./BaseStorage');
 
 const PAGE_SENDER_TIMESTAMP = 'pageId_1_senderId_1_timestamp_-1';
 const TIMESTAMP = 'timestamp_1';
@@ -13,101 +14,35 @@ const TIMESTAMP = 'timestamp_1';
  *
  * @class
  */
-class ChatLogStorage {
+class ChatLogStorage extends BaseStorage {
 
     /**
      *
      * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
      * @param {string} collectionName
-     * @param {{error:Function}} [log] - console like logger
+     * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
     constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false) {
-        this._mongoDb = mongoDb;
-        this._collectionName = collectionName;
-        this._log = log;
-        this._isCosmo = isCosmo;
+        super(mongoDb, collectionName, log, isCosmo);
 
-        /**
-         * @type {Promise<mongodb.Collection>}
-         */
-        this._collection = null;
+        this.addIndex({
+            pageId: 1,
+            senderId: 1,
+            timestamp: -1
+        }, {
+            name: PAGE_SENDER_TIMESTAMP
+        });
+
+        if (isCosmo) {
+            this.addIndex({
+                timestamp: 1
+            }, {
+                name: TIMESTAMP
+            });
+        }
 
         this.muteErrors = true;
-    }
-
-    async _getOrCreateCollection (name) {
-        const db = typeof this._mongoDb === 'function'
-            ? await this._mongoDb()
-            : this._mongoDb;
-
-        let collection;
-
-        if (this._isCosmo) {
-            const collections = await db.collections();
-
-            collection = collections
-                .find(c => c.collectionName === name);
-
-            if (!collection) {
-                try {
-                    collection = await db.createCollection(name);
-                } catch (e) {
-                    collection = db.collection(name);
-                }
-            }
-
-        } else {
-            collection = db.collection(name);
-        }
-        return collection;
-    }
-
-    /**
-     * @returns {Promise<mongodb.Collection>}
-     */
-    async _getCollection () {
-        if (this._collection === null) {
-            let c;
-            try {
-                this._collection = this._getOrCreateCollection(this._collectionName);
-                c = await this._collection;
-            } catch (e) {
-                this._collection = null;
-                throw e;
-            }
-            let indexExists;
-            try {
-                indexExists = await c.indexExists(PAGE_SENDER_TIMESTAMP);
-            } catch (e) {
-                indexExists = false;
-            }
-            if (!indexExists) {
-                await c.createIndex({
-                    pageId: 1,
-                    senderId: 1,
-                    timestamp: -1
-                }, {
-                    name: PAGE_SENDER_TIMESTAMP
-                });
-            }
-            if (this._isCosmo) {
-                let tsIndexExists;
-                try {
-                    tsIndexExists = await c.indexExists(TIMESTAMP);
-                } catch (e) {
-                    tsIndexExists = false;
-                }
-                if (!tsIndexExists) {
-                    await c.createIndex({
-                        timestamp: 1
-                    }, {
-                        name: TIMESTAMP
-                    });
-                }
-            }
-        }
-        return this._collection;
     }
 
     /**
