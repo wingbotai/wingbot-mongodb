@@ -13,6 +13,30 @@ class BaseStorage {
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
+     * @example
+     *
+     * const { BaseStorage } = require('winbot-mongodb');
+     *
+     * class MyCoolDataStorage extends BaseStorage {
+     *
+     *     constructor (mongoDb, collectionName = 'myCoolData', log = console, isCosmo = false) {
+     *          super(mongoDb, collectionName, log, isCosmo);
+     *
+     *          this.addIndex({
+     *              foo: -1
+     *          }, {
+     *              name: 'foo_1'
+     *          });
+     *
+     *          this.addIndex({
+     *              bar: -1,
+     *              baz: 1
+     *          }, {
+     *              name: 'bar_-1_baz_1'
+     *          });
+     *     }
+     *
+     * }
      */
     constructor (mongoDb, collectionName, log = console, isCosmo = false) {
         this._mongoDb = mongoDb;
@@ -70,6 +94,8 @@ class BaseStorage {
     }
 
     /**
+     * Returns the collection to operate with
+     *
      * @returns {Promise<mongodb.Collection>}
      */
     async _getCollection () {

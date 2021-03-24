@@ -25,6 +25,8 @@ Contains storage for tokens, chat states, bot config and chat logs.
 </dd>
 <dt><a href="#NotificationsStorage">NotificationsStorage</a></dt>
 <dd></dd>
+<dt><a href="#BaseStorage">BaseStorage</a></dt>
+<dd></dd>
 </dl>
 
 ## Typedefs
@@ -54,8 +56,9 @@ Storage for chat states
 **Kind**: global class  
 
 * [StateStorage](#StateStorage)
-    * [new StateStorage(mongoDb, collectionName)](#new_StateStorage_new)
-    * [._collection](#StateStorage+_collection) : <code>mongodb.Collection</code>
+    * [new StateStorage(mongoDb, collectionName, [log], isCosmo)](#new_StateStorage_new)
+    * [._collection](#StateStorage+_collection) : <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [.addCustomIndex(index, options)](#StateStorage+addCustomIndex)
     * [._getCollection()](#StateStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.getState(senderId, pageId)](#StateStorage+getState) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
     * [.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
@@ -64,17 +67,32 @@ Storage for chat states
 
 <a name="new_StateStorage_new"></a>
 
-### new StateStorage(mongoDb, collectionName)
+### new StateStorage(mongoDb, collectionName, [log], isCosmo)
 
-| Param | Type | Default |
-| --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
-| collectionName | <code>string</code> | <code>&quot;states&quot;</code> | 
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
+| collectionName | <code>string</code> | <code>&quot;states&quot;</code> |  |
+| [log] | <code>Object</code> |  | console like logger |
+| isCosmo | <code>boolean</code> | <code>false</code> |  |
 
 <a name="StateStorage+_collection"></a>
 
-### stateStorage.\_collection : <code>mongodb.Collection</code>
+### stateStorage.\_collection : <code>Promise.&lt;mongodb.Collection&gt;</code>
 **Kind**: instance property of [<code>StateStorage</code>](#StateStorage)  
+<a name="StateStorage+addCustomIndex"></a>
+
+### stateStorage.addCustomIndex(index, options)
+Add custom indexing rule
+
+**Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
+
+| Param | Type |
+| --- | --- |
+| index | <code>Object</code> | 
+| options | <code>Object</code> | 
+| options.name | <code>string</code> | 
+
 <a name="StateStorage+_getCollection"></a>
 
 ### stateStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
@@ -185,30 +203,21 @@ Storage for conversation logs
 **Kind**: global class  
 
 * [ChatLogStorage](#ChatLogStorage)
-    * [new ChatLogStorage(mongoDb, collectionName, [log])](#new_ChatLogStorage_new)
-    * [._collection](#ChatLogStorage+_collection) : <code>mongodb.Collection</code>
-    * [._getCollection()](#ChatLogStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [new ChatLogStorage(mongoDb, collectionName, [log], isCosmo)](#new_ChatLogStorage_new)
     * [.getInteractions(senderId, pageId, [limit], [endAt], [startAt])](#ChatLogStorage+getInteractions)
     * [.log(senderId, responses, request, [metadata])](#ChatLogStorage+log) ⇒ <code>Promise</code>
 
 <a name="new_ChatLogStorage_new"></a>
 
-### new ChatLogStorage(mongoDb, collectionName, [log])
+### new ChatLogStorage(mongoDb, collectionName, [log], isCosmo)
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
 | collectionName | <code>string</code> | <code>&quot;chatlogs&quot;</code> |  |
 | [log] | <code>Object</code> |  | console like logger |
+| isCosmo | <code>boolean</code> | <code>false</code> |  |
 
-<a name="ChatLogStorage+_collection"></a>
-
-### chatLogStorage.\_collection : <code>mongodb.Collection</code>
-**Kind**: instance property of [<code>ChatLogStorage</code>](#ChatLogStorage)  
-<a name="ChatLogStorage+_getCollection"></a>
-
-### chatLogStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
-**Kind**: instance method of [<code>ChatLogStorage</code>](#ChatLogStorage)  
 <a name="ChatLogStorage+getInteractions"></a>
 
 ### chatLogStorage.getInteractions(senderId, pageId, [limit], [endAt], [startAt])
@@ -364,11 +373,12 @@ Cache storage for Facebook attachments
 **Kind**: global class  
 
 * [NotificationsStorage](#NotificationsStorage)
-    * [new NotificationsStorage(mongoDb, collectionsPrefix)](#new_NotificationsStorage_new)
-    * [._collections](#NotificationsStorage+_collections) : <code>Map.&lt;string, mongodb.Collection&gt;</code>
+    * [new NotificationsStorage(mongoDb, collectionsPrefix, [log], isCosmo)](#new_NotificationsStorage_new)
+    * [._collections](#NotificationsStorage+_collections) : <code>Map.&lt;string, Promise.&lt;mongodb.Collection&gt;&gt;</code>
     * [._getCollection(collectionName)](#NotificationsStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
     * [.pushTasks(tasks)](#NotificationsStorage+pushTasks) ⇒ <code>Promise.&lt;Array.&lt;Task&gt;&gt;</code>
     * [.getUnsuccessfulSubscribersByCampaign(campaignId, [sentWithoutReaction], [pageId])](#NotificationsStorage+getUnsuccessfulSubscribersByCampaign)
+    * [.getTaskById(taskId)](#NotificationsStorage+getTaskById) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
     * [.updateTask(taskId, data)](#NotificationsStorage+updateTask)
     * [.getSentTask(pageId, senderId, campaignId)](#NotificationsStorage+getSentTask) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
     * [.getSentCampagnIds(pageId, senderId, checkCampaignIds)](#NotificationsStorage+getSentCampagnIds) ⇒ <code>Promise.&lt;Array.&lt;string&gt;&gt;</code>
@@ -389,16 +399,18 @@ Cache storage for Facebook attachments
 
 <a name="new_NotificationsStorage_new"></a>
 
-### new NotificationsStorage(mongoDb, collectionsPrefix)
+### new NotificationsStorage(mongoDb, collectionsPrefix, [log], isCosmo)
 
-| Param | Type |
-| --- | --- |
-| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> | 
-| collectionsPrefix | <code>string</code> | 
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
+| collectionsPrefix | <code>string</code> |  |  |
+| [log] | <code>Object</code> |  | console like logger |
+| isCosmo | <code>boolean</code> | <code>false</code> |  |
 
 <a name="NotificationsStorage+_collections"></a>
 
-### notificationsStorage.\_collections : <code>Map.&lt;string, mongodb.Collection&gt;</code>
+### notificationsStorage.\_collections : <code>Map.&lt;string, Promise.&lt;mongodb.Collection&gt;&gt;</code>
 **Kind**: instance property of [<code>NotificationsStorage</code>](#NotificationsStorage)  
 <a name="NotificationsStorage+_getCollection"></a>
 
@@ -428,6 +440,17 @@ Cache storage for Facebook attachments
 | campaignId | <code>string</code> |  | 
 | [sentWithoutReaction] | <code>boolean</code> | <code>false</code> | 
 | [pageId] | <code>string</code> | <code>null</code> | 
+
+<a name="NotificationsStorage+getTaskById"></a>
+
+### notificationsStorage.getTaskById(taskId) ⇒ <code>Promise.&lt;(Task\|null)&gt;</code>
+Return Task By Id
+
+**Kind**: instance method of [<code>NotificationsStorage</code>](#NotificationsStorage)  
+
+| Param | Type |
+| --- | --- |
+| taskId | <code>string</code> | 
 
 <a name="NotificationsStorage+updateTask"></a>
 
@@ -609,6 +632,76 @@ Get last sent task from campaign
 | senderId | <code>string</code> | 
 | pageId | <code>string</code> | 
 
+<a name="BaseStorage"></a>
+
+## BaseStorage
+**Kind**: global class  
+
+* [BaseStorage](#BaseStorage)
+    * [new BaseStorage(mongoDb, collectionName, [log], isCosmo)](#new_BaseStorage_new)
+    * [._collection](#BaseStorage+_collection) : <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [.addIndex(index, options)](#BaseStorage+addIndex)
+    * [._getCollection()](#BaseStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+
+<a name="new_BaseStorage_new"></a>
+
+### new BaseStorage(mongoDb, collectionName, [log], isCosmo)
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
+| collectionName | <code>string</code> |  |  |
+| [log] | <code>Object</code> |  | console like logger |
+| isCosmo | <code>boolean</code> | <code>false</code> |  |
+
+**Example**  
+```javascript
+const { BaseStorage } = require('winbot-mongodb');
+
+class MyCoolDataStorage extends BaseStorage {
+
+    constructor (mongoDb, collectionName = 'myCoolData', log = console, isCosmo = false) {
+         super(mongoDb, collectionName, log, isCosmo);
+
+         this.addIndex({
+             foo: -1
+         }, {
+             name: 'foo_1'
+         });
+
+         this.addIndex({
+             bar: -1,
+             baz: 1
+         }, {
+             name: 'bar_-1_baz_1'
+         });
+    }
+
+}
+```
+<a name="BaseStorage+_collection"></a>
+
+### baseStorage.\_collection : <code>Promise.&lt;mongodb.Collection&gt;</code>
+**Kind**: instance property of [<code>BaseStorage</code>](#BaseStorage)  
+<a name="BaseStorage+addIndex"></a>
+
+### baseStorage.addIndex(index, options)
+Add custom indexing rule
+
+**Kind**: instance method of [<code>BaseStorage</code>](#BaseStorage)  
+
+| Param | Type |
+| --- | --- |
+| index | <code>Object</code> | 
+| options | <code>Object</code> | 
+| options.name | <code>string</code> | 
+
+<a name="BaseStorage+_getCollection"></a>
+
+### baseStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+Returns the collection to operate with
+
+**Kind**: instance method of [<code>BaseStorage</code>](#BaseStorage)  
 <a name="State"></a>
 
 ## State : <code>Object</code>

@@ -19,7 +19,8 @@ const apiDoc = jsdoc2md.renderSync({
         'src/ChatLogStorage.js',
         'src/BotConfigStorage.js',
         'src/AttachmentCache.js',
-        'src/NotificationsStorage.js'
+        'src/NotificationsStorage.js',
+        'src/BaseStorage.js'
     ]
 });
 
