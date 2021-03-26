@@ -5,6 +5,8 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
+/** @typedef {import('mongodb').IndexOptions} IndexOptions */
+
 class BaseStorage {
 
     /**
@@ -56,10 +58,12 @@ class BaseStorage {
      * Add custom indexing rule
      *
      * @param {Object} index
-     * @param {Object} options
-     * @param {string} options.name
+     * @param {IndexOptions} options
      */
     addIndex (index, options) {
+        if (!options.name) {
+            throw new Error('`name` is missing in index specification!');
+        }
         this._indexes.push({
             index,
             options
