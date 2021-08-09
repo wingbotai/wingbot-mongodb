@@ -293,7 +293,7 @@ class StateStorage {
             } else {
                 const last = data[data.length - 1];
                 nextLastKey = Buffer.from(JSON.stringify({
-                    lastInteraction: last.lastInteraction.getTime()
+                    lastInteraction: last.lastInteraction ? last.lastInteraction.getTime() : 0
                 })).toString('base64');
             }
 
