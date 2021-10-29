@@ -508,7 +508,7 @@ describe('<NotificationsStorage>', function () {
 
             assert.strictEqual(res.length, 2);
 
-            assert.ok(res.every(c => ['mein', camp.id].includes(c.id)));
+            assert.ok(res.every((c) => ['mein', camp.id].includes(c.id)));
         });
 
     });
@@ -537,14 +537,14 @@ describe('<NotificationsStorage>', function () {
             const { data: res } = await storage.getCampaigns({ active: true });
 
             assert.strictEqual(res.length, 2);
-            assert.ok(res.every(c => ['foo', 'bar'].includes(c.name)));
+            assert.ok(res.every((c) => ['foo', 'bar'].includes(c.name)));
         });
 
         it('accepts limit and allows pagination', async () => {
             const { data: res, lastKey } = await storage.getCampaigns({ active: true }, 1);
 
             assert.strictEqual(res.length, 1);
-            assert.ok(res.some(c => ['foo', 'bar'].includes(c.name)));
+            assert.ok(res.some((c) => ['foo', 'bar'].includes(c.name)));
 
             const {
                 data: res2,
@@ -553,8 +553,8 @@ describe('<NotificationsStorage>', function () {
 
             assert.strictEqual(lk2, null);
             assert.strictEqual(res2.length, 1);
-            assert.ok(res2.some(c => ['foo', 'bar'].includes(c.name)));
-            assert.ok(res2.every(c => c.name !== res[0].name));
+            assert.ok(res2.some((c) => ['foo', 'bar'].includes(c.name)));
+            assert.ok(res2.every((c) => c.name !== res[0].name));
         });
 
     });
@@ -584,7 +584,6 @@ describe('<NotificationsStorage>', function () {
             await storage.subscribe('sid', 'pid', 'foo');
         });
 
-
         it('removes subscribtion', async () => {
             let subs = await storage.getSenderSubscribtions('sid', 'pid');
 
@@ -599,7 +598,6 @@ describe('<NotificationsStorage>', function () {
             assert.deepStrictEqual(subs, [
                 'bar'
             ]);
-
 
             await storage.unsubscribe('sid', 'pid', 'bar');
 

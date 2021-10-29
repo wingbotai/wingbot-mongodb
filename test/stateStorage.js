@@ -11,7 +11,6 @@ const SENDER_ID = 'hello';
 const SENDER_ID2 = 'hello2';
 const PAGE_ID = 'pid';
 
-
 describe('<StateStorage>', function () {
 
     /** @type {StateStorage} */
@@ -122,12 +121,8 @@ describe('<StateStorage>', function () {
             const first = await storage.getOrCreateAndLock(SENDER_ID, PAGE_ID, firstState);
             const second = await storage.getOrCreateAndLock(SENDER_ID2, PAGE_ID, secondState);
 
-            await storage.saveState(Object.assign({}, first, {
-                lastInteraction
-            }));
-            await storage.saveState(Object.assign({}, second, {
-                lastInteraction: lastInteraction2
-            }));
+            await storage.saveState({ ...first, lastInteraction });
+            await storage.saveState({ ...second, lastInteraction: lastInteraction2 });
         });
 
         it('should return states by last interaction', async () => {

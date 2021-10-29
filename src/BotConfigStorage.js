@@ -108,7 +108,7 @@ class BotConfigStorage {
     }
 
     /**
-     * @returns {Promise<Object|null>}
+     * @returns {Promise<object | null>}
      */
     async getConfig () {
         const c = await this._getCollection();

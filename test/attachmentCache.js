@@ -9,7 +9,6 @@ const mongodb = require('./mongodb');
 
 const TEST_URL = 'abc';
 
-
 describe('<AttachmentCache>', function () {
 
     /** @type {AttachmentCache} */

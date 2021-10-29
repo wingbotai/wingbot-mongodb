@@ -94,9 +94,9 @@ class ChatLogStorage extends BaseStorage {
      * Log single event
      *
      * @param {string} senderId
-     * @param {Object[]} responses - list of sent responses
-     * @param {Object} request - event request
-     * @param {Object} [metadata] - request metadata
+     * @param {object[]} responses - list of sent responses
+     * @param {object} request - event request
+     * @param {object} [metadata] - request metadata
      * @returns {Promise}
      */
     log (senderId, responses = [], request = {}, metadata = {}) {
@@ -110,7 +110,7 @@ class ChatLogStorage extends BaseStorage {
         Object.assign(log, metadata);
 
         return this._getCollection()
-            .then(c => c.insertOne(log))
+            .then((c) => c.insertOne(log))
             .catch((err) => {
                 this._log.error('Failed to store chat log', err, log);
 
@@ -127,9 +127,9 @@ class ChatLogStorage extends BaseStorage {
      * @name ChatLog#error
      * @param {any} err - error
      * @param {string} senderId
-     * @param {Object[]} [responses] - list of sent responses
-     * @param {Object} [request] - event request
-     * @param {Object} [metadata] - request metadata
+     * @param {object[]} [responses] - list of sent responses
+     * @param {object} [request] - event request
+     * @param {object} [metadata] - request metadata
      * @returns {Promise}
      */
     error (err, senderId, responses = [], request = {}, metadata = {}) {
@@ -144,7 +144,7 @@ class ChatLogStorage extends BaseStorage {
         Object.assign(log, metadata);
 
         return this._getCollection()
-            .then(c => c.insertOne(log))
+            .then((c) => c.insertOne(log))
             .catch((storeError) => {
                 this._log.error('Failed to store chat log', storeError, log);
 

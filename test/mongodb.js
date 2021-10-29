@@ -44,7 +44,7 @@ async function connect (disconnect) {
     }
 
     return connectedMongoDb
-        .then(connection => connection.db('wingbot-mongodb-test'));
+        .then((connection) => connection.db('wingbot-mongodb-test'));
 }
 
 module.exports = connect;

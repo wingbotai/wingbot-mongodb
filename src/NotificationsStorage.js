@@ -21,7 +21,7 @@ const { ObjectID } = mongodb;
  */
 
 /**
- * @typedef Campaign {Object}
+ * @typedef Campaign {object}
  * @prop {string} id
  * @prop {string} name
  *
@@ -45,7 +45,7 @@ const { ObjectID } = mongodb;
  * Interaction
  *
  * @prop {string} action
- * @prop {Object} [data]
+ * @prop {object} [data]
  *
  * Setup
  *
@@ -71,7 +71,6 @@ const { ObjectID } = mongodb;
  * @prop {boolean} [reaction] - user reacted
  * @prop {number} [leaved] - time the event was not sent because user left
  */
-
 
 const MAX_TS = 9999999999999;
 const COSMO_LIMIT = 999;
@@ -114,7 +113,7 @@ class NotificationsStorage {
             const collections = await db.collections();
 
             collection = collections
-                .find(c => c.collectionName === name);
+                .find((c) => c.collectionName === name);
 
             if (!collection) {
                 try {
@@ -223,7 +222,7 @@ class NotificationsStorage {
         }
 
         await Promise.all(existing
-            .filter(e => !['_id_', '_id'].includes(e.name) && !indexes.some(i => e.name === i.options.name))
+            .filter((e) => !['_id_', '_id'].includes(e.name) && !indexes.some((i) => e.name === i.options.name))
             .map((e) => {
                 // eslint-disable-next-line no-console
                 this._log.log(`dropping index ${e.name}`);
@@ -235,8 +234,8 @@ class NotificationsStorage {
             }));
 
         await Promise.all(indexes
-            .filter(i => !existing.some(e => e.name === i.options.name))
-            .map(i => collection
+            .filter((i) => !existing.some((e) => e.name === i.options.name))
+            .map((i) => collection
                 .createIndex(i.index, i.options)
                 // @ts-ignore
                 .catch((e) => {
@@ -251,7 +250,7 @@ class NotificationsStorage {
 
     /**
      *
-     * @param {Object} tasks
+     * @param {object} tasks
      * @returns {Promise<Task[]>}
      */
     async pushTasks (tasks) {
@@ -267,7 +266,7 @@ class NotificationsStorage {
                 campaignId, senderId, pageId, sent
             } = task;
 
-            const $set = Object.assign({}, task);
+            const $set = { ...task };
 
             const filter = {
                 campaignId, senderId, pageId, sent
@@ -338,7 +337,7 @@ class NotificationsStorage {
             } else {
                 override = missingIds.get(i);
             }
-            return Object.assign({}, task, override);
+            return { ...task, ...override };
         });
     }
 
@@ -464,7 +463,7 @@ class NotificationsStorage {
     /**
      *
      * @param {string} taskId
-     * @param {Object} data
+     * @param {object} data
      */
     async updateTask (taskId, data) {
         const c = await this._getCollection(this.taksCollection);
@@ -530,7 +529,7 @@ class NotificationsStorage {
                 .project({ campaignId: 1, _id: 0 })
                 .toArray();
 
-            return data.map(d => d.campaignId);
+            return data.map((d) => d.campaignId);
         }
     }
 
@@ -558,7 +557,7 @@ class NotificationsStorage {
         }
 
         const result = await Promise.all(
-            tasks.map(task => c.findOneAndUpdate({
+            tasks.map((task) => c.findOneAndUpdate({
                 _id: task._id,
                 [eventType]: null
             }, {
@@ -571,14 +570,14 @@ class NotificationsStorage {
         );
 
         return result
-            .map(res => (res.value ? this._mapGenericObject(res.value) : null))
-            .filter(r => r !== null);
+            .map((res) => (res.value ? this._mapGenericObject(res.value) : null))
+            .filter((r) => r !== null);
     }
 
     /**
      *
-     * @param {Object} campaign
-     * @param {Object} [updateCampaign]
+     * @param {object} campaign
+     * @param {object} [updateCampaign]
      * @returns {Promise<Campaign>}
      */
     async upsertCampaign (campaign, updateCampaign = null) {
@@ -586,7 +585,7 @@ class NotificationsStorage {
 
         let ret;
         if (campaign.id) {
-            const $setOnInsert = Object.assign({}, campaign);
+            const $setOnInsert = { ...campaign };
             delete $setOnInsert.id;
             const update = {};
             if (Object.keys($setOnInsert).length !== 0) {
@@ -608,7 +607,7 @@ class NotificationsStorage {
             ret = this._mapCampaign(res.value);
         } else {
             const id = new ObjectID();
-            ret = Object.assign({ id: id.toHexString(), _id: id }, campaign);
+            ret = { id: id.toHexString(), _id: id, ...campaign };
             if (updateCampaign) {
                 Object.assign(ret, updateCampaign);
             }
@@ -635,7 +634,7 @@ class NotificationsStorage {
     /**
      *
      * @param {string} campaignId
-     * @param {Object} increment
+     * @param {object} increment
      * @returns {Promise}
      */
     async incrementCampaign (campaignId, increment = {}) {
@@ -651,7 +650,7 @@ class NotificationsStorage {
     /**
      *
      * @param {string} campaignId
-     * @param {Object} data
+     * @param {object} data
      * @returns {Promise<Campaign|null>}
      */
     async updateCampaign (campaignId, data) {
@@ -717,16 +716,16 @@ class NotificationsStorage {
             }
         })
             .limit(campaignIds.length)
-            .map(camp => this._mapCampaign(camp));
+            .map((camp) => this._mapCampaign(camp));
 
         return cursor.toArray();
     }
 
     /**
      *
-     * @param {Object} condition
+     * @param {object} condition
      * @param {number} [limit]
-     * @param {Object} [lastKey]
+     * @param {object} [lastKey]
      * @returns {Promise<{data:Campaign[],lastKey:string}>}
      */
     async getCampaigns (condition, limit = null, lastKey = null) {
@@ -737,11 +736,12 @@ class NotificationsStorage {
         if (lastKey !== null) {
             const key = JSON.parse(Buffer.from(lastKey, 'base64').toString('utf8'));
 
-            useCondition = Object.assign({}, useCondition, {
+            useCondition = {
+                ...useCondition,
                 _id: {
                     $lt: ObjectID.createFromHexString(key._id)
                 }
-            });
+            };
         }
 
         const cursor = c.find(useCondition)
@@ -764,7 +764,7 @@ class NotificationsStorage {
         }
 
         return {
-            data: data.map(camp => this._mapCampaign(camp)),
+            data: data.map((camp) => this._mapCampaign(camp)),
             lastKey: nextLastKey
         };
     }
@@ -880,11 +880,12 @@ class NotificationsStorage {
         if (lastKey !== null) {
             const key = JSON.parse(Buffer.from(lastKey, 'base64').toString('utf8'));
 
-            condition = Object.assign({}, condition, {
+            condition = {
+                ...condition,
                 _id: {
                     $gt: ObjectID.createFromHexString(key._id)
                 }
-            });
+            };
         }
 
         let data = [];
@@ -971,7 +972,6 @@ class NotificationsStorage {
         }
 
         const res = await c.aggregate(pipeline);
-
 
         const arr = await res.toArray();
 

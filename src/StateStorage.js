@@ -10,14 +10,14 @@ const LAST_INTERACTION_INDEX = 'lastInteraction_1';
 const SEARCH = 'search-text';
 
 /**
- * @typedef {Object} State
+ * @typedef {object} State
  * @prop {string} senderId
  * @prop {string} pageId
- * @prop {Object} state
+ * @prop {object} state
  */
 
 /**
- * @typedef {Object} StateCondition
+ * @typedef {object} StateCondition
  * @prop {string} [search]
  */
 
@@ -53,8 +53,8 @@ class StateStorage {
     /**
      * Add custom indexing rule
      *
-     * @param {Object} index
-     * @param {Object} options
+     * @param {object} index
+     * @param {object} options
      * @param {string} options.name
      */
     addCustomIndex (index, options) {
@@ -99,7 +99,7 @@ class StateStorage {
             const collections = await db.collections();
 
             collection = collections
-                .find(c => c.collectionName === name);
+                .find((c) => c.collectionName === name);
 
             if (!collection) {
                 try {
@@ -145,7 +145,7 @@ class StateStorage {
         }
 
         await Promise.all(existing
-            .filter(e => !['_id_', '_id'].includes(e.name) && !indexes.some(i => e.name === i.options.name))
+            .filter((e) => !['_id_', '_id'].includes(e.name) && !indexes.some((i) => e.name === i.options.name))
             .map((e) => {
                 // eslint-disable-next-line no-console
                 this._log.log(`dropping index ${e.name}`);
@@ -157,8 +157,8 @@ class StateStorage {
             }));
 
         await Promise.all(indexes
-            .filter(i => !existing.some(e => e.name === i.options.name))
-            .map(i => collection
+            .filter((i) => !existing.some((e) => e.name === i.options.name))
+            .map((i) => collection
                 .createIndex(i.index, i.options)
                 // @ts-ignore
                 .catch((e) => {
@@ -187,9 +187,9 @@ class StateStorage {
      *
      * @param {string} senderId - sender identifier
      * @param {string} pageId - page identifier
-     * @param {Object} [defaultState] - default state of the conversation
+     * @param {object} [defaultState] - default state of the conversation
      * @param {number} [timeout=300] - given default state
-     * @returns {Promise<Object>} - conversation state
+     * @returns {Promise<object>} - conversation state
      */
     async getOrCreateAndLock (senderId, pageId, defaultState = {}, timeout = 300) {
         const now = Date.now();
@@ -301,7 +301,7 @@ class StateStorage {
         }
 
         return {
-            data: data.map(camp => this._mapState(camp)),
+            data: data.map((camp) => this._mapState(camp)),
             lastKey: nextLastKey
         };
     }
@@ -323,8 +323,8 @@ class StateStorage {
     /**
      * Save the state to database
      *
-     * @param {Object} state - conversation state
-     * @returns {Promise<Object>}
+     * @param {object} state - conversation state
+     * @returns {Promise<object>}
      */
     async saveState (state) {
         Object.assign(state, {

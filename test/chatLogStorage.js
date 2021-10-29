@@ -9,7 +9,6 @@ const mongodb = require('./mongodb');
 
 const SENDER_ID = 'hello';
 
-
 describe('<ChatLogStorage>', function () {
 
     /** @type {ChatLogStorage} */

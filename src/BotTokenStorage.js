@@ -10,7 +10,7 @@ const TOKEN_INDEX = 'token-index';
 const USER_INDEX = 'user-page-index';
 
 /**
- * @typedef {Object} Token
+ * @typedef {object} Token
  * @prop {string} senderId
  * @prop {string} pageId
  * @prop {string} token
@@ -166,7 +166,7 @@ class BotTokenStorage {
     }
 
     _wait (ms) {
-        return new Promise(r => setTimeout(r, ms));
+        return new Promise((r) => setTimeout(r, ms));
     }
 
 }

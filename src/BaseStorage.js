@@ -57,7 +57,7 @@ class BaseStorage {
     /**
      * Add custom indexing rule
      *
-     * @param {Object} index
+     * @param {object} index
      * @param {IndexOptions} options
      */
     addIndex (index, options) {
@@ -81,7 +81,7 @@ class BaseStorage {
             const collections = await db.collections();
 
             collection = collections
-                .find(c => c.collectionName === name);
+                .find((c) => c.collectionName === name);
 
             if (!collection) {
                 try {
@@ -127,8 +127,8 @@ class BaseStorage {
         }
 
         await Promise.all(existing
-            .filter(e => !['_id_', '_id'].includes(e.name)
-                && !indexes.some(i => e.name === i.options.name))
+            .filter((e) => !['_id_', '_id'].includes(e.name)
+                && !indexes.some((i) => e.name === i.options.name))
             .map((e) => {
                 // eslint-disable-next-line no-console
                 this._log.log(`dropping index ${e.name}`);
@@ -140,8 +140,8 @@ class BaseStorage {
             }));
 
         await Promise.all(indexes
-            .filter(i => !existing.some(e => e.name === i.options.name))
-            .map(i => collection
+            .filter((i) => !existing.some((e) => e.name === i.options.name))
+            .map((i) => collection
                 .createIndex(i.index, i.options)
                 // @ts-ignore
                 .catch((e) => {

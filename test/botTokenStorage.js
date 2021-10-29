@@ -11,7 +11,6 @@ const SENDER_ID = 'hello5';
 const SENDER_ID2 = 'hello6';
 const PAGE_ID = 'xy';
 
-
 describe('<BotTokenStorage>', function () {
 
     /** @type {BotTokenStorage} */
@@ -66,7 +65,7 @@ describe('<BotTokenStorage>', function () {
                 bts.getOrCreateToken('a', PAGE_ID, () => Promise.resolve('another'))
             ]);
 
-            assert.ok(tokens.every(t => t.senderId === 'a'
+            assert.ok(tokens.every((t) => t.senderId === 'a'
                 && (t.token === 'fake' || t.token === 'another')));
         });
 
