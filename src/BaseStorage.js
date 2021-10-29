@@ -94,6 +94,9 @@ class BaseStorage {
         } else {
             collection = db.collection(name);
         }
+
+        await this._ensureIndexes(this._indexes, collection);
+
         return collection;
     }
 
@@ -108,12 +111,11 @@ class BaseStorage {
             try {
                 this._collection = this._getOrCreateCollection(this._collectionName);
                 c = await this._collection;
+                this._collection = c;
             } catch (e) {
                 this._collection = null;
                 throw e;
             }
-
-            await this._ensureIndexes(this._indexes, c);
         }
         return this._collection;
     }
@@ -145,12 +147,7 @@ class BaseStorage {
                 .createIndex(i.index, i.options)
                 // @ts-ignore
                 .catch((e) => {
-                    if (i.isTextIndex) {
-                        this._doesNotSupportTextIndex = true;
-                    } else {
-                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`);
-                        throw e;
-                    }
+                    this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
                 })));
     }
 

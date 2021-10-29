@@ -4,6 +4,7 @@
 'use strict';
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+const BaseStorage = require('./BaseStorage');
 
 const USER_INDEX = 'senderId_1_pageId_1';
 const LAST_INTERACTION_INDEX = 'lastInteraction_1';
@@ -26,7 +27,7 @@ const SEARCH = 'search-text';
  *
  * @class
  */
-class StateStorage {
+class StateStorage extends BaseStorage {
 
     /**
      *
@@ -35,19 +36,25 @@ class StateStorage {
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionName = 'states', log = console, isCosmo = false) {
-        this._mongoDb = mongoDb;
-        this._collectionName = collectionName;
-        this._isCosmo = isCosmo;
-        this._log = log;
+    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false) {
+        super(mongoDb, collectionName, log, isCosmo);
 
-        /**
-         * @type {Promise<mongodb.Collection>}
-         */
-        this._collection = null;
-        this._doesNotSupportTextIndex = isCosmo;
+        this.addIndex(
+            { senderId: 1, pageId: 1 },
+            { name: USER_INDEX, unique: true, dropDups: true }
+        );
+        this.addIndex(
+            { lastInteraction: isCosmo ? 1 : -1 },
+            { name: LAST_INTERACTION_INDEX }
+        );
 
-        this._customIndexes = [];
+        if (!isCosmo) {
+            this.addIndex(
+                { '$**': 'text' },
+                { name: SEARCH }
+            );
+        }
+
     }
 
     /**
@@ -56,119 +63,10 @@ class StateStorage {
      * @param {object} index
      * @param {object} options
      * @param {string} options.name
+     * @deprecated
      */
     addCustomIndex (index, options) {
-        this._customIndexes.push({
-            index,
-            options
-        });
-    }
-
-    _getIndexes () {
-        const indexes = [
-            {
-                index: { senderId: 1, pageId: 1 },
-                options: { name: USER_INDEX, unique: true, dropDups: true }
-            },
-            {
-                index: { lastInteraction: this._isCosmo ? 1 : -1 },
-                options: { name: LAST_INTERACTION_INDEX }
-            }
-        ];
-
-        if (!this._doesNotSupportTextIndex) {
-            indexes.push({
-                // @ts-ignore
-                index: { '$**': 'text' },
-                options: { name: SEARCH },
-                isTextIndex: true
-            });
-        }
-
-        return [...indexes, ...this._customIndexes];
-    }
-
-    async _getOrCreateCollection (name) {
-        const db = typeof this._mongoDb === 'function'
-            ? await this._mongoDb()
-            : this._mongoDb;
-
-        let collection;
-
-        if (this._isCosmo) {
-            const collections = await db.collections();
-
-            collection = collections
-                .find((c) => c.collectionName === name);
-
-            if (!collection) {
-                try {
-                    collection = await db.createCollection(name);
-                } catch (e) {
-                    collection = db.collection(name);
-                }
-            }
-
-        } else {
-            collection = db.collection(name);
-        }
-        return collection;
-    }
-
-    /**
-     * @returns {Promise<mongodb.Collection>}
-     */
-    async _getCollection () {
-        if (this._collection === null) {
-            let c;
-            try {
-                this._collection = this._getOrCreateCollection(this._collectionName);
-                c = await this._collection;
-            } catch (e) {
-                this._collection = null;
-                throw e;
-            }
-
-            const indexes = this._getIndexes();
-
-            await this._ensureIndexes(indexes, c);
-        }
-        return this._collection;
-    }
-
-    async _ensureIndexes (indexes, collection) {
-        let existing;
-        try {
-            existing = await collection.indexes();
-        } catch (e) {
-            existing = [];
-        }
-
-        await Promise.all(existing
-            .filter((e) => !['_id_', '_id'].includes(e.name) && !indexes.some((i) => e.name === i.options.name))
-            .map((e) => {
-                // eslint-disable-next-line no-console
-                this._log.log(`dropping index ${e.name}`);
-                return collection.dropIndex(e.name)
-                    .catch((err) => {
-                        // eslint-disable-next-line no-console
-                        this._log.error(`dropping index ${e.name} FAILED`, err);
-                    });
-            }));
-
-        await Promise.all(indexes
-            .filter((i) => !existing.some((e) => e.name === i.options.name))
-            .map((i) => collection
-                .createIndex(i.index, i.options)
-                // @ts-ignore
-                .catch((e) => {
-                    if (i.isTextIndex) {
-                        this._doesNotSupportTextIndex = true;
-                    } else {
-                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`);
-                        throw e;
-                    }
-                })));
+        this.addIndex(index, options);
     }
 
     /**
@@ -257,7 +155,7 @@ class StateStorage {
         const searchStates = typeof condition.search === 'string';
 
         if (searchStates) {
-            if (this._doesNotSupportTextIndex) {
+            if (this._isCosmo) {
                 Object.assign(useCondition, {
                     name: { $regex: condition.search, $options: 'i' }
                 });
@@ -270,7 +168,7 @@ class StateStorage {
                 .find(useCondition)
                 .limit(limit + 1)
                 .skip(skip);
-            if (!this._doesNotSupportTextIndex) {
+            if (!this._isCosmo) {
                 cursor
                     .project({ score: { $meta: 'textScore' } })
                     .sort({ score: { $meta: 'textScore' } });
