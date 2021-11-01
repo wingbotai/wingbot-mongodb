@@ -32,17 +32,17 @@ Contains storage for tokens, chat states, bot config and chat logs.
 ## Typedefs
 
 <dl>
-<dt><a href="#State">State</a> : <code>Object</code></dt>
+<dt><a href="#State">State</a> : <code>object</code></dt>
 <dd></dd>
-<dt><a href="#StateCondition">StateCondition</a> : <code>Object</code></dt>
+<dt><a href="#StateCondition">StateCondition</a> : <code>object</code></dt>
 <dd></dd>
-<dt><a href="#Token">Token</a> : <code>Object</code></dt>
+<dt><a href="#Token">Token</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#Target">Target</a> : <code>Object</code></dt>
 <dd></dd>
 <dt><a href="#Subscribtion">Subscribtion</a> : <code>Object</code></dt>
 <dd></dd>
-<dt><a href="#Campaign">Campaign</a> : <code>Object</code></dt>
+<dt><a href="#Campaign">Campaign</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#Task">Task</a> : <code>Object</code></dt>
 <dd></dd>
@@ -57,13 +57,11 @@ Storage for chat states
 
 * [StateStorage](#StateStorage)
     * [new StateStorage(mongoDb, collectionName, [log], isCosmo)](#new_StateStorage_new)
-    * [._collection](#StateStorage+_collection) : <code>Promise.&lt;mongodb.Collection&gt;</code>
-    * [.addCustomIndex(index, options)](#StateStorage+addCustomIndex)
-    * [._getCollection()](#StateStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * ~~[.addCustomIndex(index, options)](#StateStorage+addCustomIndex)~~
     * [.getState(senderId, pageId)](#StateStorage+getState) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
-    * [.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;Object&gt;</code>
+    * [.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout])](#StateStorage+getOrCreateAndLock) ⇒ <code>Promise.&lt;object&gt;</code>
     * [.getStates(condition, limit, lastKey)](#StateStorage+getStates) ⇒ <code>Promise.&lt;{Array.&lt;data:State&gt;, lastKey:string}&gt;</code>
-    * [.saveState(state)](#StateStorage+saveState) ⇒ <code>Promise.&lt;Object&gt;</code>
+    * [.saveState(state)](#StateStorage+saveState) ⇒ <code>Promise.&lt;object&gt;</code>
 
 <a name="new_StateStorage_new"></a>
 
@@ -72,31 +70,25 @@ Storage for chat states
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
-| collectionName | <code>string</code> | <code>&quot;states&quot;</code> |  |
+| collectionName | <code>string</code> | <code>&quot;chatlogs&quot;</code> |  |
 | [log] | <code>Object</code> |  | console like logger |
 | isCosmo | <code>boolean</code> | <code>false</code> |  |
 
-<a name="StateStorage+_collection"></a>
-
-### stateStorage.\_collection : <code>Promise.&lt;mongodb.Collection&gt;</code>
-**Kind**: instance property of [<code>StateStorage</code>](#StateStorage)  
 <a name="StateStorage+addCustomIndex"></a>
 
-### stateStorage.addCustomIndex(index, options)
+### ~~stateStorage.addCustomIndex(index, options)~~
+***Deprecated***
+
 Add custom indexing rule
 
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
 
 | Param | Type |
 | --- | --- |
-| index | <code>Object</code> | 
-| options | <code>Object</code> | 
+| index | <code>object</code> | 
+| options | <code>object</code> | 
 | options.name | <code>string</code> | 
 
-<a name="StateStorage+_getCollection"></a>
-
-### stateStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
-**Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
 <a name="StateStorage+getState"></a>
 
 ### stateStorage.getState(senderId, pageId) ⇒ <code>Promise.&lt;(State\|null)&gt;</code>
@@ -109,17 +101,17 @@ Add custom indexing rule
 
 <a name="StateStorage+getOrCreateAndLock"></a>
 
-### stateStorage.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout]) ⇒ <code>Promise.&lt;Object&gt;</code>
+### stateStorage.getOrCreateAndLock(senderId, pageId, [defaultState], [timeout]) ⇒ <code>Promise.&lt;object&gt;</code>
 Load state from database and lock it to prevent another reads
 
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
-**Returns**: <code>Promise.&lt;Object&gt;</code> - - conversation state  
+**Returns**: <code>Promise.&lt;object&gt;</code> - - conversation state  
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | senderId | <code>string</code> |  | sender identifier |
 | pageId | <code>string</code> |  | page identifier |
-| [defaultState] | <code>Object</code> |  | default state of the conversation |
+| [defaultState] | <code>object</code> |  | default state of the conversation |
 | [timeout] | <code>number</code> | <code>300</code> | given default state |
 
 <a name="StateStorage+getStates"></a>
@@ -135,14 +127,14 @@ Load state from database and lock it to prevent another reads
 
 <a name="StateStorage+saveState"></a>
 
-### stateStorage.saveState(state) ⇒ <code>Promise.&lt;Object&gt;</code>
+### stateStorage.saveState(state) ⇒ <code>Promise.&lt;object&gt;</code>
 Save the state to database
 
 **Kind**: instance method of [<code>StateStorage</code>](#StateStorage)  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| state | <code>Object</code> | conversation state |
+| state | <code>object</code> | conversation state |
 
 <a name="BotTokenStorage"></a>
 
@@ -244,9 +236,9 @@ Log single event
 | Param | Type | Description |
 | --- | --- | --- |
 | senderId | <code>string</code> |  |
-| responses | <code>Array.&lt;Object&gt;</code> | list of sent responses |
-| request | <code>Object</code> | event request |
-| [metadata] | <code>Object</code> | request metadata |
+| responses | <code>Array.&lt;object&gt;</code> | list of sent responses |
+| request | <code>object</code> | event request |
+| [metadata] | <code>object</code> | request metadata |
 
 <a name="BotConfigStorage"></a>
 
@@ -262,8 +254,9 @@ Storage for wingbot.ai conversation config
     * [.api([onUpdate], [acl])](#BotConfigStorage+api) ⇒ <code>Object</code>
     * [.invalidateConfig()](#BotConfigStorage+invalidateConfig) ⇒ <code>Promise</code>
     * [.getConfigTimestamp()](#BotConfigStorage+getConfigTimestamp) ⇒ <code>Promise.&lt;number&gt;</code>
-    * [.updateConfig(newConfig)](#BotConfigStorage+updateConfig) ⇒ <code>Promise.&lt;T&gt;</code>
-    * [.getConfig()](#BotConfigStorage+getConfig) ⇒ <code>Promise.&lt;(Object\|null)&gt;</code>
+    * [.updateConfig(newConfig, [id])](#BotConfigStorage+updateConfig) ⇒ <code>Promise.&lt;T&gt;</code>
+    * [.setConfig(id, newConfig)](#BotConfigStorage+setConfig)
+    * [.getConfig([id])](#BotConfigStorage+getConfig) ⇒ <code>Promise.&lt;(object\|null)&gt;</code>
 
 <a name="new_BotConfigStorage_new"></a>
 
@@ -306,17 +299,33 @@ Invalidates current configuration
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+updateConfig"></a>
 
-### botConfigStorage.updateConfig(newConfig) ⇒ <code>Promise.&lt;T&gt;</code>
+### botConfigStorage.updateConfig(newConfig, [id]) ⇒ <code>Promise.&lt;T&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 
 | Param | Type |
 | --- | --- |
 | newConfig | <code>T</code> | 
+| [id] | <code>string</code> | 
+
+<a name="BotConfigStorage+setConfig"></a>
+
+### botConfigStorage.setConfig(id, newConfig)
+**Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+
+| Param | Type |
+| --- | --- |
+| id | <code>string</code> | 
+| newConfig | <code>object</code> | 
 
 <a name="BotConfigStorage+getConfig"></a>
 
-### botConfigStorage.getConfig() ⇒ <code>Promise.&lt;(Object\|null)&gt;</code>
+### botConfigStorage.getConfig([id]) ⇒ <code>Promise.&lt;(object\|null)&gt;</code>
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
+
+| Param | Type |
+| --- | --- |
+| [id] | <code>string</code> | 
+
 <a name="AttachmentCache"></a>
 
 ## AttachmentCache
@@ -428,7 +437,7 @@ Cache storage for Facebook attachments
 
 | Param | Type |
 | --- | --- |
-| tasks | <code>Object</code> | 
+| tasks | <code>object</code> | 
 
 <a name="NotificationsStorage+getUnsuccessfulSubscribersByCampaign"></a>
 
@@ -460,7 +469,7 @@ Return Task By Id
 | Param | Type |
 | --- | --- |
 | taskId | <code>string</code> | 
-| data | <code>Object</code> | 
+| data | <code>object</code> | 
 
 <a name="NotificationsStorage+getSentTask"></a>
 
@@ -506,8 +515,8 @@ Get last sent task from campaign
 
 | Param | Type | Default |
 | --- | --- | --- |
-| campaign | <code>Object</code> |  | 
-| [updateCampaign] | <code>Object</code> | <code></code> | 
+| campaign | <code>object</code> |  | 
+| [updateCampaign] | <code>object</code> | <code></code> | 
 
 <a name="NotificationsStorage+removeCampaign"></a>
 
@@ -526,7 +535,7 @@ Get last sent task from campaign
 | Param | Type |
 | --- | --- |
 | campaignId | <code>string</code> | 
-| increment | <code>Object</code> | 
+| increment | <code>object</code> | 
 
 <a name="NotificationsStorage+updateCampaign"></a>
 
@@ -536,7 +545,7 @@ Get last sent task from campaign
 | Param | Type |
 | --- | --- |
 | campaignId | <code>string</code> | 
-| data | <code>Object</code> | 
+| data | <code>object</code> | 
 
 <a name="NotificationsStorage+popCampaign"></a>
 
@@ -572,9 +581,9 @@ Get last sent task from campaign
 
 | Param | Type | Default |
 | --- | --- | --- |
-| condition | <code>Object</code> |  | 
+| condition | <code>object</code> |  | 
 | [limit] | <code>number</code> | <code></code> | 
-| [lastKey] | <code>Object</code> | <code></code> | 
+| [lastKey] | <code>object</code> | <code></code> | 
 
 <a name="NotificationsStorage+subscribe"></a>
 
@@ -692,9 +701,8 @@ Add custom indexing rule
 
 | Param | Type |
 | --- | --- |
-| index | <code>Object</code> | 
-| options | <code>Object</code> | 
-| options.name | <code>string</code> | 
+| index | <code>object</code> | 
+| options | <code>mongodb.IndexOptions</code> | 
 
 <a name="BaseStorage+_getCollection"></a>
 
@@ -704,7 +712,7 @@ Returns the collection to operate with
 **Kind**: instance method of [<code>BaseStorage</code>](#BaseStorage)  
 <a name="State"></a>
 
-## State : <code>Object</code>
+## State : <code>object</code>
 **Kind**: global typedef  
 **Properties**
 
@@ -712,11 +720,11 @@ Returns the collection to operate with
 | --- | --- |
 | senderId | <code>string</code> | 
 | pageId | <code>string</code> | 
-| state | <code>Object</code> | 
+| state | <code>object</code> | 
 
 <a name="StateCondition"></a>
 
-## StateCondition : <code>Object</code>
+## StateCondition : <code>object</code>
 **Kind**: global typedef  
 **Properties**
 
@@ -726,7 +734,7 @@ Returns the collection to operate with
 
 <a name="Token"></a>
 
-## Token : <code>Object</code>
+## Token : <code>object</code>
 **Kind**: global typedef  
 **Properties**
 
@@ -761,7 +769,7 @@ Returns the collection to operate with
 
 <a name="Campaign"></a>
 
-## Campaign : <code>Object</code>
+## Campaign : <code>object</code>
 **Kind**: global typedef  
 **Properties**
 
@@ -781,7 +789,7 @@ Returns the collection to operate with
 | leaved | <code>number</code> |  |
 | queued | <code>number</code> | Interaction |
 | action | <code>string</code> |  |
-| [data] | <code>Object</code> | Setup |
+| [data] | <code>object</code> | Setup |
 | sliding | <code>boolean</code> |  |
 | slide | <code>number</code> |  |
 | slideRound | <code>number</code> |  |

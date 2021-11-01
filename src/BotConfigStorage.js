@@ -95,25 +95,36 @@ class BotConfigStorage {
     /**
      * @template T
      * @param {T} newConfig
+     * @param {string} [id]
      * @returns {Promise<T>}
      */
-    async updateConfig (newConfig) {
+    async updateConfig (newConfig, id = CONFIG_ID) {
         Object.assign(newConfig, { timestamp: Date.now() });
 
-        const c = await this._getCollection();
-
-        await c.replaceOne({ _id: CONFIG_ID }, newConfig, { upsert: true });
+        await this.setConfig(id, newConfig);
 
         return newConfig;
     }
 
     /**
-     * @returns {Promise<object | null>}
+     *
+     * @param {string} id
+     * @param {object} newConfig
      */
-    async getConfig () {
+    async setConfig (id, newConfig) {
         const c = await this._getCollection();
 
-        return c.findOne({ _id: CONFIG_ID }, { projection: { _id: 0 } });
+        await c.replaceOne({ _id: id }, newConfig, { upsert: true });
+    }
+
+    /**
+     * @param {string} [id]
+     * @returns {Promise<object | null>}
+     */
+    async getConfig (id = CONFIG_ID) {
+        const c = await this._getCollection();
+
+        return c.findOne({ _id: id }, { projection: { _id: 0 } });
     }
 
 }

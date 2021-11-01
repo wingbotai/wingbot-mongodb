@@ -5,8 +5,6 @@
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 
-/** @typedef {import('mongodb').IndexOptions} IndexOptions */
-
 class BaseStorage {
 
     /**
@@ -58,7 +56,7 @@ class BaseStorage {
      * Add custom indexing rule
      *
      * @param {object} index
-     * @param {IndexOptions} options
+     * @param {mongodb.IndexOptions} options
      */
     addIndex (index, options) {
         if (!options.name) {
@@ -128,27 +126,30 @@ class BaseStorage {
             existing = [];
         }
 
-        await Promise.all(existing
+        await existing
             .filter((e) => !['_id_', '_id'].includes(e.name)
                 && !indexes.some((i) => e.name === i.options.name))
-            .map((e) => {
+            .reduce((p, e) => {
                 // eslint-disable-next-line no-console
                 this._log.log(`dropping index ${e.name}`);
-                return collection.dropIndex(e.name)
+                return p
+                    .then(() => collection.dropIndex(e.name))
                     .catch((err) => {
                         // eslint-disable-next-line no-console
                         this._log.error(`dropping index ${e.name} FAILED`, err);
                     });
-            }));
+            }, Promise.resolve());
 
-        await Promise.all(indexes
+        await indexes
             .filter((i) => !existing.some((e) => e.name === i.options.name))
-            .map((i) => collection
-                .createIndex(i.index, i.options)
-                // @ts-ignore
-                .catch((e) => {
-                    this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
-                })));
+            .reduce((p, i) => {
+                this._log.log(`creating index ${i.name}`);
+                return p
+                    .then(() => collection.createIndex(i.index, i.options))
+                    .catch((e) => {
+                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
+                    });
+            }, Promise.resolve());
     }
 
 }
