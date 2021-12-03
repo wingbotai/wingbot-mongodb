@@ -9,6 +9,7 @@ const BotTokenStorage = require('./BotTokenStorage');
 const ChatLogStorage = require('./ChatLogStorage');
 const BotConfigStorage = require('./BotConfigStorage');
 const AttachmentCache = require('./AttachmentCache');
+const AuditLogStorage = require('./AuditLogStorage');
 const NotificationsStorage = require('./NotificationsStorage');
 
 module.exports = {
@@ -18,5 +19,6 @@ module.exports = {
     ChatLogStorage,
     BotConfigStorage,
     AttachmentCache,
-    NotificationsStorage
+    NotificationsStorage,
+    AuditLogStorage
 };

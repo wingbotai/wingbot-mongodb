@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "2.18.0",
+  "version": "2.19.0",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
@@ -46,10 +46,13 @@
     "mocha": "^9.1.3",
     "mongodb": "^3.7.3",
     "nyc": "^15.1.0",
-    "wingbot": "^3.22.4"
+    "wingbot": "^3.25.0"
   },
   "peerDependencies": {
     "mongodb": "^3.0.0",
     "wingbot": "^3.0.0"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1"
   }
 }

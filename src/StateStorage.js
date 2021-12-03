@@ -115,7 +115,7 @@ class StateStorage extends BaseStorage {
             $set
         }, {
             upsert: true,
-            returnOriginal: false,
+            returnDocument: 'after',
             projection: {
                 _id: 0
             }

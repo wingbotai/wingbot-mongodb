@@ -3,11 +3,12 @@
 */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 const BaseStorage = require('./BaseStorage');
 
 const PAGE_SENDER_TIMESTAMP = 'pageId_1_senderId_1_timestamp_-1';
 const TIMESTAMP = 'timestamp_1';
+
+/** @typedef {import('mongodb/lib/db')} Db */
 
 /**
  * Storage for conversation logs
@@ -18,12 +19,13 @@ class ChatLogStorage extends BaseStorage {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
-     * @param {boolean} isCosmo
+     * @param {boolean} [isCosmo]
+     * @param {string|Promise<string>} [secret]
      */
-    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false) {
+    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false, secret = null) {
         super(mongoDb, collectionName, log, isCosmo);
 
         this.addIndex({
@@ -43,6 +45,7 @@ class ChatLogStorage extends BaseStorage {
         }
 
         this.muteErrors = true;
+        this._secret = secret;
     }
 
     /**
@@ -54,6 +57,7 @@ class ChatLogStorage extends BaseStorage {
      * @param {number} [limit]
      * @param {number} [endAt] - iterate backwards to history
      * @param {number} [startAt] - iterate forward to last interaction
+     * @returns {Promise<object[]>}
      */
     async getInteractions (senderId, pageId, limit = 10, endAt = null, startAt = null) {
         const c = await this._getCollection();
@@ -80,14 +84,33 @@ class ChatLogStorage extends BaseStorage {
         const res = await c.find(q)
             .limit(limit)
             .sort({ timestamp: orderBackwards ? 1 : -1 })
-            .project({ _id: 0, time: 0 })
+            .project({ _id: 0 })
             .toArray();
 
         if (!orderBackwards) {
             res.reverse();
         }
 
-        return res;
+        if (!this._secret) {
+            return res.map((r) => Object.assign(r, { ok: null }));
+        }
+
+        const secret = await Promise.resolve(this._secret);
+
+        return res.map((r) => {
+            const {
+                sign,
+                ...log
+            } = r;
+            const objToSign = this._objectToSign(log);
+            const compare = this._signWithSecret(objToSign, secret);
+            const ok = compare === sign;
+            if (!ok) {
+                this._log.error(`ChatLog: found wrong signature at pageId: "${r.pageId}", senderId: "${r.senderId}", at: ${r.timestamp}`, r);
+            }
+
+            return Object.assign(log, { ok });
+        });
     }
 
     /**
@@ -102,22 +125,38 @@ class ChatLogStorage extends BaseStorage {
     log (senderId, responses = [], request = {}, metadata = {}) {
         const log = {
             senderId,
-            time: new Date(request.timestamp || Date.now()),
             request,
-            responses
+            responses,
+            ...metadata
         };
 
-        Object.assign(log, metadata);
+        return this._storeLog(log);
+    }
 
-        return this._getCollection()
-            .then((c) => c.insertOne(log))
-            .catch((err) => {
-                this._log.error('Failed to store chat log', err, log);
-
-                if (!this.muteErrors) {
-                    throw err;
-                }
+    async _storeLog (event) {
+        let log = event;
+        if (!event.timestamp) {
+            Object.assign(event, {
+                timestamp: event.request.timestamp || Date.now()
             });
+        }
+        if (typeof event.pageId === 'undefined') {
+            Object.assign(event, {
+                pageId: null
+            });
+        }
+        try {
+            const c = await this._getCollection();
+            log = await this._sign(log);
+            // @ts-ignore
+            await c.insertOne(log);
+        } catch (e) {
+            this._log.error('Failed to store chat log', e, log);
+
+            if (!this.muteErrors) {
+                throw e;
+            }
+        }
     }
 
     /**
@@ -135,23 +174,15 @@ class ChatLogStorage extends BaseStorage {
     error (err, senderId, responses = [], request = {}, metadata = {}) {
         const log = {
             senderId,
-            time: new Date(request.timestamp || Date.now()),
             request,
             responses,
-            err: `${err}`
+            err: `${err}`,
+            ...metadata
         };
 
         Object.assign(log, metadata);
 
-        return this._getCollection()
-            .then((c) => c.insertOne(log))
-            .catch((storeError) => {
-                this._log.error('Failed to store chat log', storeError, log);
-
-                if (!this.muteErrors) {
-                    throw storeError;
-                }
-            });
+        return this._storeLog(log);
     }
 
 }

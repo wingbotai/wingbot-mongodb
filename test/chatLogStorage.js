@@ -58,7 +58,8 @@ describe('<ChatLogStorage>', function () {
                         }
                     ],
                     senderId: 'abc',
-                    timestamp: firstTs
+                    timestamp: firstTs,
+                    ok: null
                 },
                 {
                     pageId: '2',
@@ -71,7 +72,8 @@ describe('<ChatLogStorage>', function () {
                         }
                     ],
                     senderId: 'abc',
-                    timestamp
+                    timestamp,
+                    ok: null
                 }
             ]);
 
@@ -89,7 +91,8 @@ describe('<ChatLogStorage>', function () {
                         }
                     ],
                     senderId: 'abc',
-                    timestamp: firstTs
+                    timestamp: firstTs,
+                    ok: null
                 }
             ]);
 
@@ -107,7 +110,8 @@ describe('<ChatLogStorage>', function () {
                         }
                     ],
                     senderId: 'abc',
-                    timestamp: firstTs
+                    timestamp: firstTs,
+                    ok: null
                 },
                 {
                     pageId: '2',
@@ -120,7 +124,8 @@ describe('<ChatLogStorage>', function () {
                         }
                     ],
                     senderId: 'abc',
-                    timestamp
+                    timestamp,
+                    ok: null
                 }
             ]);
         });
@@ -139,6 +144,25 @@ describe('<ChatLogStorage>', function () {
             chl = new ChatLogStorage(mongodb);
 
             await chl.error(new Error('something failed'), SENDER_ID);
+        });
+
+    });
+
+    describe('signing option', () => {
+
+        it('writes signatures and checks them', async () => {
+            const db = await mongodb();
+
+            const c = new ChatLogStorage(db, 'signedlogs', console, false, 'sasalele');
+            c.muteErrors = false;
+
+            const senderId = `${Date.now}${Math.random()}`;
+            await c.log(senderId, [{ response: 1 }], { req: 1 });
+
+            const list = await c.getInteractions(senderId, null);
+
+            assert.strictEqual(list.length, 1);
+            assert.ok(list.every((l) => l.ok));
         });
 
     });

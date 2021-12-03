@@ -131,7 +131,7 @@ class BotTokenStorage {
             }
         }, {
             upsert: true,
-            returnOriginal: false
+            returnDocument: 'after'
         });
 
         res = res.value;

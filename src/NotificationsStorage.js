@@ -381,7 +381,7 @@ class NotificationsStorage {
                 }
             }, {
                 sort: { enqueue: 1 },
-                returnOriginal: false
+                returnDocument: 'after'
             });
             if (found.value) {
                 pop.push(this._mapGenericObject(found.value));
@@ -475,7 +475,7 @@ class NotificationsStorage {
         }, {
             $set: data
         }, {
-            returnOriginal: false
+            returnDocument: 'after'
         });
 
         return this._mapGenericObject(res.value);
@@ -565,7 +565,7 @@ class NotificationsStorage {
                     [eventType]: ts
                 }
             }, {
-                returnOriginal: false
+                returnDocument: 'after'
             }))
         );
 
@@ -602,7 +602,7 @@ class NotificationsStorage {
                 id: campaign.id
             }, update, {
                 upsert: true,
-                returnOriginal: false
+                returnDocument: 'after'
             });
             ret = this._mapCampaign(res.value);
         } else {
@@ -661,7 +661,7 @@ class NotificationsStorage {
         }, {
             $set: data
         }, {
-            returnOriginal: false
+            returnDocument: 'after'
         });
 
         return this._mapCampaign(res.value);
@@ -681,7 +681,7 @@ class NotificationsStorage {
         }, {
             $set: { startAt: null }
         }, {
-            returnOriginal: true
+            returnDocument: 'before'
         });
 
         return this._mapCampaign(res.value);
@@ -807,7 +807,7 @@ class NotificationsStorage {
             }, {
                 $pull: { subs: tag }
             }, {
-                returnOriginal: false
+                returnDocument: 'after'
             });
 
             if (res.value) {

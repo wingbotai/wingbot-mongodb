@@ -4,15 +4,19 @@
 'use strict';
 
 const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+const crypto = require('crypto');
+
+/** @typedef {import('mongodb/lib/db')} Db */
+/** @typedef {import('mongodb/lib/collection')} Collection */
 
 class BaseStorage {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
-     * @param {boolean} isCosmo
+     * @param {boolean} [isCosmo]
      * @example
      *
      * const { BaseStorage } = require('winbot-mongodb');
@@ -45,11 +49,14 @@ class BaseStorage {
         this._log = log;
 
         /**
-         * @type {Promise<mongodb.Collection>}
+         * @type {Collection|Promise<Collection>}
          */
         this._collection = null;
 
         this._indexes = [];
+
+        this.ignoredSignatureKeys = ['_id', 'sign'];
+        this._secret = null;
     }
 
     /**
@@ -101,7 +108,7 @@ class BaseStorage {
     /**
      * Returns the collection to operate with
      *
-     * @returns {Promise<mongodb.Collection>}
+     * @returns {Promise<Collection>}
      */
     async _getCollection () {
         if (this._collection === null) {
@@ -152,6 +159,44 @@ class BaseStorage {
             }, Promise.resolve());
     }
 
+    async _sign (object) {
+        if (!this._secret) {
+            return object;
+        }
+        const secret = await Promise.resolve(this._secret);
+        const objToSign = this._objectToSign(object);
+        const sign = this._signWithSecret(objToSign, secret);
+
+        return Object.assign(objToSign, {
+            sign
+        });
+    }
+
+    _objectToSign (object) {
+        const entries = Object.keys(object)
+            .filter((key) => !this.ignoredSignatureKeys.includes(key));
+
+        entries.sort();
+
+        return entries.reduce((o, key) => {
+            let val = object[key];
+            if (val instanceof Date) {
+                val = val.toISOString();
+            }
+            return Object.assign(o, { [key]: val });
+        }, {});
+    }
+
+    _signWithSecret (objToSign, secret, previous = null) {
+        const h = crypto.createHmac('sha3-224', secret)
+            .update(JSON.stringify(objToSign));
+
+        if (previous) {
+            h.update(previous);
+        }
+
+        return h.digest('base64');
+    }
 }
 
 module.exports = BaseStorage;
