@@ -3,8 +3,16 @@
  */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
-const { apiAuthorizer } = require('wingbot');
+let apiAuthorizer = () => false;
+try {
+    // @ts-ignore
+    ({ apiAuthorizer } = module.require('wingbot'));
+} catch (e) {
+    // noop
+}
+
+/** @typedef {import('mongodb/lib/db')} Db */
+/** @typedef {import('mongodb/lib/collection')} Collection */
 
 const CONFIG_ID = 'config';
 
@@ -17,7 +25,7 @@ class BotConfigStorage {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'botconfig') {
@@ -25,13 +33,13 @@ class BotConfigStorage {
         this._collectionName = collectionName;
 
         /**
-         * @type {mongodb.Collection}
+         * @type {Collection}
          */
         this._collection = null;
     }
 
     /**
-     * @returns {Promise<mongodb.Collection>}
+     * @returns {Promise<Collection>}
      */
     async _getCollection () {
         if (this._collection === null) {
@@ -56,6 +64,7 @@ class BotConfigStorage {
         const storage = this;
         return {
             async updateBot (args, ctx) {
+                // @ts-ignore
                 if (!apiAuthorizer(args, ctx, acl)) {
                     return null;
                 }
@@ -74,6 +83,7 @@ class BotConfigStorage {
     async invalidateConfig () {
         const c = await this._getCollection();
 
+        // @ts-ignore
         return c.deleteOne({ _id: CONFIG_ID });
     }
 
