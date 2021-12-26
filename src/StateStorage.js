@@ -36,7 +36,7 @@ class StateStorage extends BaseStorage {
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false) {
+    constructor (mongoDb, collectionName = 'states', log = console, isCosmo = false) {
         super(mongoDb, collectionName, log, isCosmo);
 
         this.addIndex(

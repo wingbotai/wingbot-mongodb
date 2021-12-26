@@ -57,6 +57,19 @@ class BaseStorage {
 
         this.ignoredSignatureKeys = ['_id', 'sign'];
         this._secret = null;
+
+        this.systemIndexes = ['_id_', '_id'];
+
+        this._fixtures = [];
+    }
+
+    /**
+     * Insert defalt document to DB
+     *
+     * @param  {...any} objects
+     */
+    addFixtureDoc (...objects) {
+        this._fixtures.push(...objects);
     }
 
     /**
@@ -83,6 +96,7 @@ class BaseStorage {
         let collection;
 
         if (this._isCosmo) {
+            // @ts-ignore
             const collections = await db.collections();
 
             collection = collections
@@ -134,7 +148,7 @@ class BaseStorage {
         }
 
         await existing
-            .filter((e) => !['_id_', '_id'].includes(e.name)
+            .filter((e) => !this.systemIndexes.includes(e.name)
                 && !indexes.some((i) => e.name === i.options.name))
             .reduce((p, e) => {
                 // eslint-disable-next-line no-console
@@ -147,7 +161,7 @@ class BaseStorage {
                     });
             }, Promise.resolve());
 
-        await indexes
+        const updated = await indexes
             .filter((i) => !existing.some((e) => e.name === i.options.name))
             .reduce((p, i) => {
                 this._log.log(`creating index ${i.name}`);
@@ -155,8 +169,23 @@ class BaseStorage {
                     .then(() => collection.createIndex(i.index, i.options))
                     .catch((e) => {
                         this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
-                    });
-            }, Promise.resolve());
+                    })
+                    .then(() => true);
+            }, Promise.resolve(false));
+
+        if (updated || existing.every((i) => this.systemIndexes.includes(i.name))) {
+            // upsert fixtures
+
+            await this._fixtures.reduce((p, o) => p
+                .then(() => collection.insertOne(o))
+                .then(() => this._log.log(`DB> Inserted fixture doc to "${this._collectionName}"`))
+                .catch((e) => {
+                    if (e.code !== 11000) {
+                        this._log.error(`DB> failed to insert fixture doc to "${this._collectionName}"`, e);
+                    }
+                }),
+            Promise.resolve());
+        }
     }
 
     async _sign (object) {

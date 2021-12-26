@@ -13,6 +13,7 @@ const beginning = readme.split(separator)[0];
 
 const apiDoc = jsdoc2md.renderSync({
     'example-lang': 'javascript',
+    configure: path.resolve(__dirname, 'jsdoc.config.js'),
     files: [
         'src/StateStorage.js',
         'src/BotTokenStorage.js',

@@ -23,6 +23,9 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dt><a href="#AttachmentCache">AttachmentCache</a></dt>
 <dd><p>Cache storage for Facebook attachments</p>
 </dd>
+<dt><a href="#AuditLogStorage">AuditLogStorage</a></dt>
+<dd><p>Storage for audit logs with signatures chain</p>
+</dd>
 <dt><a href="#NotificationsStorage">NotificationsStorage</a></dt>
 <dd></dd>
 <dt><a href="#BaseStorage">BaseStorage</a></dt>
@@ -38,6 +41,30 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dd></dd>
 <dt><a href="#Token">Token</a> : <code>object</code></dt>
 <dd></dd>
+<dt><a href="#Db">Db</a> : <code>module:mongodb/lib/db</code></dt>
+<dd></dd>
+<dt><a href="#Db">Db</a> : <code>module:mongodb/lib/db</code></dt>
+<dd></dd>
+<dt><a href="#Collection">Collection</a> : <code>module:mongodb/lib/collection</code></dt>
+<dd></dd>
+<dt><a href="#Db">Db</a> : <code>module:mongodb/lib/db</code></dt>
+<dd></dd>
+<dt><a href="#TrackingEvent">TrackingEvent</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#User">User</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#Meta">Meta</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#LogEntry">LogEntry</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#JwtVerifier">JwtVerifier</a> ⇒ <code>Promise.&lt;boolean&gt;</code></dt>
+<dd><p>JWT Verifier</p>
+</dd>
+<dt><a href="#AuditLogEntry">AuditLogEntry</a> : <code>object</code></dt>
+<dd></dd>
+<dt><a href="#AuditLogCallback">AuditLogCallback</a> ⇒ <code>Promise</code></dt>
+<dd><p>Audit Log Callback</p>
+</dd>
 <dt><a href="#Target">Target</a> : <code>Object</code></dt>
 <dd></dd>
 <dt><a href="#Subscribtion">Subscribtion</a> : <code>Object</code></dt>
@@ -45,6 +72,10 @@ Contains storage for tokens, chat states, bot config and chat logs.
 <dt><a href="#Campaign">Campaign</a> : <code>object</code></dt>
 <dd></dd>
 <dt><a href="#Task">Task</a> : <code>Object</code></dt>
+<dd></dd>
+<dt><a href="#Db">Db</a> : <code>module:mongodb/lib/db</code></dt>
+<dd></dd>
+<dt><a href="#Collection">Collection</a> : <code>module:mongodb/lib/collection</code></dt>
 <dd></dd>
 </dl>
 
@@ -70,7 +101,7 @@ Storage for chat states
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
-| collectionName | <code>string</code> | <code>&quot;chatlogs&quot;</code> |  |
+| collectionName | <code>string</code> | <code>&quot;states&quot;</code> |  |
 | [log] | <code>Object</code> |  | console like logger |
 | isCosmo | <code>boolean</code> | <code>false</code> |  |
 
@@ -195,24 +226,25 @@ Storage for conversation logs
 **Kind**: global class  
 
 * [ChatLogStorage](#ChatLogStorage)
-    * [new ChatLogStorage(mongoDb, collectionName, [log], isCosmo)](#new_ChatLogStorage_new)
-    * [.getInteractions(senderId, pageId, [limit], [endAt], [startAt])](#ChatLogStorage+getInteractions)
+    * [new ChatLogStorage(mongoDb, collectionName, [log], [isCosmo], [secret])](#new_ChatLogStorage_new)
+    * [.getInteractions(senderId, pageId, [limit], [endAt], [startAt])](#ChatLogStorage+getInteractions) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
     * [.log(senderId, responses, request, [metadata])](#ChatLogStorage+log) ⇒ <code>Promise</code>
 
 <a name="new_ChatLogStorage_new"></a>
 
-### new ChatLogStorage(mongoDb, collectionName, [log], isCosmo)
+### new ChatLogStorage(mongoDb, collectionName, [log], [isCosmo], [secret])
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
+| mongoDb | [<code>Db</code>](#Db) \| <code>Object</code> |  |  |
 | collectionName | <code>string</code> | <code>&quot;chatlogs&quot;</code> |  |
 | [log] | <code>Object</code> |  | console like logger |
-| isCosmo | <code>boolean</code> | <code>false</code> |  |
+| [isCosmo] | <code>boolean</code> | <code>false</code> |  |
+| [secret] | <code>string</code> \| <code>Promise.&lt;string&gt;</code> | <code>null</code> |  |
 
 <a name="ChatLogStorage+getInteractions"></a>
 
-### chatLogStorage.getInteractions(senderId, pageId, [limit], [endAt], [startAt])
+### chatLogStorage.getInteractions(senderId, pageId, [limit], [endAt], [startAt]) ⇒ <code>Promise.&lt;Array.&lt;object&gt;&gt;</code>
 Interate history
 all limits are inclusive
 
@@ -249,8 +281,8 @@ Storage for wingbot.ai conversation config
 
 * [BotConfigStorage](#BotConfigStorage)
     * [new BotConfigStorage(mongoDb, collectionName)](#new_BotConfigStorage_new)
-    * [._collection](#BotConfigStorage+_collection) : <code>mongodb.Collection</code>
-    * [._getCollection()](#BotConfigStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [._collection](#BotConfigStorage+_collection) : [<code>Collection</code>](#Collection)
+    * [._getCollection()](#BotConfigStorage+_getCollection) ⇒ [<code>Promise.&lt;Collection&gt;</code>](#Collection)
     * [.api([onUpdate], [acl])](#BotConfigStorage+api) ⇒ <code>Object</code>
     * [.invalidateConfig()](#BotConfigStorage+invalidateConfig) ⇒ <code>Promise</code>
     * [.getConfigTimestamp()](#BotConfigStorage+getConfigTimestamp) ⇒ <code>Promise.&lt;number&gt;</code>
@@ -264,16 +296,16 @@ Storage for wingbot.ai conversation config
 
 | Param | Type | Default |
 | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  | 
+| mongoDb | [<code>Db</code>](#Db) \| <code>Object</code> |  | 
 | collectionName | <code>string</code> | <code>&quot;botconfig&quot;</code> | 
 
 <a name="BotConfigStorage+_collection"></a>
 
-### botConfigStorage.\_collection : <code>mongodb.Collection</code>
+### botConfigStorage.\_collection : [<code>Collection</code>](#Collection)
 **Kind**: instance property of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+_getCollection"></a>
 
-### botConfigStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### botConfigStorage.\_getCollection() ⇒ [<code>Promise.&lt;Collection&gt;</code>](#Collection)
 **Kind**: instance method of [<code>BotConfigStorage</code>](#BotConfigStorage)  
 <a name="BotConfigStorage+api"></a>
 
@@ -375,6 +407,69 @@ Cache storage for Facebook attachments
 | --- | --- |
 | url | <code>string</code> | 
 | attachmentId | <code>number</code> | 
+
+<a name="AuditLogStorage"></a>
+
+## AuditLogStorage
+Storage for audit logs with signatures chain
+
+**Kind**: global class  
+
+* [AuditLogStorage](#AuditLogStorage)
+    * [new AuditLogStorage(mongoDb, collectionName, [log], [isCosmo], [secret], [jwtVerifier])](#new_AuditLogStorage_new)
+    * [._jwtVerify](#AuditLogStorage+_jwtVerify) : [<code>JwtVerifier</code>](#JwtVerifier)
+    * [.callback](#AuditLogStorage+callback) : [<code>AuditLogCallback</code>](#AuditLogCallback)
+    * [.log(event, user, [meta], [wid], [type], [level], [date])](#AuditLogStorage+log) ⇒ <code>Promise</code>
+    * [.list([wid], [fromSeq], [limit])](#AuditLogStorage+list) ⇒ <code>Promise.&lt;Array.&lt;LogEntry&gt;&gt;</code>
+
+<a name="new_AuditLogStorage_new"></a>
+
+### new AuditLogStorage(mongoDb, collectionName, [log], [isCosmo], [secret], [jwtVerifier])
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| mongoDb | [<code>Db</code>](#Db) \| <code>Object</code> |  |  |
+| collectionName | <code>string</code> | <code>&quot;auditlog&quot;</code> |  |
+| [log] | <code>Object</code> |  | console like logger |
+| [isCosmo] | <code>boolean</code> | <code>false</code> |  |
+| [secret] | <code>string</code> \| <code>Promise.&lt;string&gt;</code> | <code>null</code> |  |
+| [jwtVerifier] | <code>string</code> \| <code>Promise.&lt;string&gt;</code> | <code>null</code> |  |
+
+<a name="AuditLogStorage+_jwtVerify"></a>
+
+### auditLogStorage.\_jwtVerify : [<code>JwtVerifier</code>](#JwtVerifier)
+**Kind**: instance property of [<code>AuditLogStorage</code>](#AuditLogStorage)  
+<a name="AuditLogStorage+callback"></a>
+
+### auditLogStorage.callback : [<code>AuditLogCallback</code>](#AuditLogCallback)
+**Kind**: instance property of [<code>AuditLogStorage</code>](#AuditLogStorage)  
+<a name="AuditLogStorage+log"></a>
+
+### auditLogStorage.log(event, user, [meta], [wid], [type], [level], [date]) ⇒ <code>Promise</code>
+Add a log
+
+**Kind**: instance method of [<code>AuditLogStorage</code>](#AuditLogStorage)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| event | [<code>TrackingEvent</code>](#TrackingEvent) |  |
+| user | [<code>User</code>](#User) |  |
+| [meta] | [<code>Meta</code>](#Meta) |  |
+| [wid] | <code>string</code> | workspace ID |
+| [type] | <code>string</code> |  |
+| [level] | <code>string</code> |  |
+| [date] | <code>Date</code> |  |
+
+<a name="AuditLogStorage+list"></a>
+
+### auditLogStorage.list([wid], [fromSeq], [limit]) ⇒ <code>Promise.&lt;Array.&lt;LogEntry&gt;&gt;</code>
+**Kind**: instance method of [<code>AuditLogStorage</code>](#AuditLogStorage)  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [wid] | <code>string</code> |  | workspace id |
+| [fromSeq] | <code>number</code> | <code>0</code> | for paging |
+| [limit] | <code>number</code> | <code>40</code> |  |
 
 <a name="NotificationsStorage"></a>
 
@@ -647,21 +742,22 @@ Get last sent task from campaign
 **Kind**: global class  
 
 * [BaseStorage](#BaseStorage)
-    * [new BaseStorage(mongoDb, collectionName, [log], isCosmo)](#new_BaseStorage_new)
-    * [._collection](#BaseStorage+_collection) : <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [new BaseStorage(mongoDb, collectionName, [log], [isCosmo])](#new_BaseStorage_new)
+    * [._collection](#BaseStorage+_collection) : [<code>Collection</code>](#Collection) \| [<code>Promise.&lt;Collection&gt;</code>](#Collection)
+    * [.addFixtureDoc(...objects)](#BaseStorage+addFixtureDoc)
     * [.addIndex(index, options)](#BaseStorage+addIndex)
-    * [._getCollection()](#BaseStorage+_getCollection) ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+    * [._getCollection()](#BaseStorage+_getCollection) ⇒ [<code>Promise.&lt;Collection&gt;</code>](#Collection)
 
 <a name="new_BaseStorage_new"></a>
 
-### new BaseStorage(mongoDb, collectionName, [log], isCosmo)
+### new BaseStorage(mongoDb, collectionName, [log], [isCosmo])
 
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
-| mongoDb | <code>mongodb.Db</code> \| <code>Object</code> |  |  |
+| mongoDb | [<code>Db</code>](#Db) \| <code>Object</code> |  |  |
 | collectionName | <code>string</code> |  |  |
 | [log] | <code>Object</code> |  | console like logger |
-| isCosmo | <code>boolean</code> | <code>false</code> |  |
+| [isCosmo] | <code>boolean</code> | <code>false</code> |  |
 
 **Example**  
 ```javascript
@@ -690,8 +786,19 @@ class MyCoolDataStorage extends BaseStorage {
 ```
 <a name="BaseStorage+_collection"></a>
 
-### baseStorage.\_collection : <code>Promise.&lt;mongodb.Collection&gt;</code>
+### baseStorage.\_collection : [<code>Collection</code>](#Collection) \| [<code>Promise.&lt;Collection&gt;</code>](#Collection)
 **Kind**: instance property of [<code>BaseStorage</code>](#BaseStorage)  
+<a name="BaseStorage+addFixtureDoc"></a>
+
+### baseStorage.addFixtureDoc(...objects)
+Insert defalt document to DB
+
+**Kind**: instance method of [<code>BaseStorage</code>](#BaseStorage)  
+
+| Param | Type |
+| --- | --- |
+| ...objects | <code>any</code> | 
+
 <a name="BaseStorage+addIndex"></a>
 
 ### baseStorage.addIndex(index, options)
@@ -706,7 +813,7 @@ Add custom indexing rule
 
 <a name="BaseStorage+_getCollection"></a>
 
-### baseStorage.\_getCollection() ⇒ <code>Promise.&lt;mongodb.Collection&gt;</code>
+### baseStorage.\_getCollection() ⇒ [<code>Promise.&lt;Collection&gt;</code>](#Collection)
 Returns the collection to operate with
 
 **Kind**: instance method of [<code>BaseStorage</code>](#BaseStorage)  
@@ -743,6 +850,128 @@ Returns the collection to operate with
 | senderId | <code>string</code> | 
 | pageId | <code>string</code> | 
 | token | <code>string</code> | 
+
+<a name="Db"></a>
+
+## Db : <code>module:mongodb/lib/db</code>
+**Kind**: global typedef  
+<a name="Db"></a>
+
+## Db : <code>module:mongodb/lib/db</code>
+**Kind**: global typedef  
+<a name="Collection"></a>
+
+## Collection : <code>module:mongodb/lib/collection</code>
+**Kind**: global typedef  
+<a name="Db"></a>
+
+## Db : <code>module:mongodb/lib/db</code>
+**Kind**: global typedef  
+<a name="TrackingEvent"></a>
+
+## TrackingEvent : <code>object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default |
+| --- | --- | --- |
+| [type] | <code>string</code> | <code>&quot;&#x27;audit&#x27;&quot;</code> | 
+| category | <code>string</code> |  | 
+| action | <code>string</code> |  | 
+| [label] | <code>string</code> |  | 
+| [payload] | <code>object</code> |  | 
+
+<a name="User"></a>
+
+## User : <code>object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [id] | <code>string</code> |  |
+| [senderId] | <code>string</code> |  |
+| [pageId] | <code>string</code> |  |
+| [jwt] | <code>string</code> | jwt to check the authorship |
+
+<a name="Meta"></a>
+
+## Meta : <code>object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| [ip] | <code>string</code> |  |
+| [ua] | <code>string</code> |  |
+| [ro] | <code>string</code> | referrer || origin |
+
+<a name="LogEntry"></a>
+
+## LogEntry : <code>object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| date | <code>string</code> |  | ISO date |
+| delta | <code>number</code> |  | time skew in ms if there was a write conflict |
+| [eventType] | <code>string</code> | <code>&quot;&#x27;audit&#x27;&quot;</code> |  |
+| category | <code>string</code> |  |  |
+| action | <code>string</code> |  |  |
+| [label] | <code>string</code> |  |  |
+| [payload] | <code>object</code> |  |  |
+| level | <code>string</code> |  | (Critical|Important|Debug) |
+| ok | <code>boolean</code> |  | signature matches |
+| seq | <code>number</code> |  | sequence number |
+| type | <code>string</code> |  | (Error|Warn|Info) |
+| user | [<code>User</code>](#User) |  |  |
+| wid | <code>string</code> |  | workspace id |
+| meta | [<code>Meta</code>](#Meta) |  |  |
+
+<a name="JwtVerifier"></a>
+
+## JwtVerifier ⇒ <code>Promise.&lt;boolean&gt;</code>
+JWT Verifier
+
+**Kind**: global typedef  
+
+| Param | Type |
+| --- | --- |
+| token | <code>string</code> | 
+| userId | <code>string</code> | 
+| [user] | [<code>User</code>](#User) | 
+
+<a name="AuditLogEntry"></a>
+
+## AuditLogEntry : <code>object</code>
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| date | <code>string</code> |  | ISO date |
+| [eventType] | <code>string</code> | <code>&quot;&#x27;audit&#x27;&quot;</code> |  |
+| category | <code>string</code> |  |  |
+| action | <code>string</code> |  |  |
+| [label] | <code>string</code> |  |  |
+| [payload] | <code>object</code> |  |  |
+| level | <code>string</code> |  | (Critical|Important|Debug) |
+| type | <code>string</code> |  | (Error|Warn|Info) |
+| user | [<code>User</code>](#User) |  |  |
+| wid | <code>string</code> |  | workspace id |
+| meta | [<code>Meta</code>](#Meta) |  |  |
+
+<a name="AuditLogCallback"></a>
+
+## AuditLogCallback ⇒ <code>Promise</code>
+Audit Log Callback
+
+**Kind**: global typedef  
+
+| Param | Type |
+| --- | --- |
+| entry | [<code>AuditLogEntry</code>](#AuditLogEntry) | 
 
 <a name="Target"></a>
 
@@ -817,3 +1046,11 @@ Returns the collection to operate with
 | [reaction] | <code>boolean</code> | user reacted |
 | [leaved] | <code>number</code> | time the event was not sent because user left |
 
+<a name="Db"></a>
+
+## Db : <code>module:mongodb/lib/db</code>
+**Kind**: global typedef  
+<a name="Collection"></a>
+
+## Collection : <code>module:mongodb/lib/collection</code>
+**Kind**: global typedef  
