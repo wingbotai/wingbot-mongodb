@@ -151,24 +151,22 @@ class BaseStorage {
             .filter((e) => !this.systemIndexes.includes(e.name)
                 && !indexes.some((i) => e.name === i.options.name))
             .reduce((p, e) => {
-                // eslint-disable-next-line no-console
-                this._log.log(`dropping index ${e.name}`);
+                this._log.log(`DB.${this._collectionName} dropping index ${e.name}`);
                 return p
                     .then(() => collection.dropIndex(e.name))
                     .catch((err) => {
-                        // eslint-disable-next-line no-console
-                        this._log.error(`dropping index ${e.name} FAILED`, err);
+                        this._log.error(`DB.${this._collectionName} dropping index ${e.name} FAILED`, err);
                     });
             }, Promise.resolve());
 
         const updated = await indexes
             .filter((i) => !existing.some((e) => e.name === i.options.name))
             .reduce((p, i) => {
-                this._log.log(`creating index ${i.name}`);
+                this._log.log(`DB.${this._collectionName} creating index ${i.options.name}`);
                 return p
                     .then(() => collection.createIndex(i.index, i.options))
                     .catch((e) => {
-                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
+                        this._log.error(`DB.${this._collectionName} failed to create index ${i.options.name} on ${collection.collectionName}`, e);
                     })
                     .then(() => true);
             }, Promise.resolve(false));
@@ -178,10 +176,10 @@ class BaseStorage {
 
             await this._fixtures.reduce((p, o) => p
                 .then(() => collection.insertOne(o))
-                .then(() => this._log.log(`DB> Inserted fixture doc to "${this._collectionName}"`))
+                .then(() => this._log.log(`DB.${this._collectionName} Inserted fixture doc to "${this._collectionName}"`))
                 .catch((e) => {
                     if (e.code !== 11000) {
-                        this._log.error(`DB> failed to insert fixture doc to "${this._collectionName}"`, e);
+                        this._log.error(`DB.${this._collectionName} failed to insert fixture doc to "${this._collectionName}"`, e);
                     }
                 }),
             Promise.resolve());
