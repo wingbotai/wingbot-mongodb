@@ -122,6 +122,7 @@ class BaseStorage {
     /**
      * Returns the collection to operate with
      *
+     * @protected
      * @returns {Promise<Collection>}
      */
     async _getCollection () {
@@ -186,6 +187,13 @@ class BaseStorage {
         }
     }
 
+    /**
+     *
+     * @template T
+     * @protected
+     * @param {T} object
+     * @returns {Promise<T>}
+     */
     async _sign (object) {
         if (!this._secret) {
             return object;
@@ -199,12 +207,20 @@ class BaseStorage {
         });
     }
 
+    /**
+     *
+     * @private
+     * @template T
+     * @param {T} object
+     * @returns {T}
+     */
     _objectToSign (object) {
         const entries = Object.keys(object)
             .filter((key) => !this.ignoredSignatureKeys.includes(key));
 
         entries.sort();
 
+        // @ts-ignore
         return entries.reduce((o, key) => {
             let val = object[key];
             if (val instanceof Date) {
@@ -214,6 +230,14 @@ class BaseStorage {
         }, {});
     }
 
+    /**
+     *
+     * @template T
+     * @param {T} objToSign
+     * @param {string} secret
+     * @param {string} [previous]
+     * @returns {string}
+     */
     _signWithSecret (objToSign, secret, previous = null) {
         const h = crypto.createHmac('sha3-224', secret)
             .update(JSON.stringify(objToSign));

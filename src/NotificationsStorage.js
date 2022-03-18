@@ -771,21 +771,30 @@ class NotificationsStorage {
 
     /**
      *
-     * @param {string} senderId
+     * @param {string|string[]} senderId
      * @param {string} pageId
      * @param {string} tag
+     * @param {boolean} [onlyToKnown]
      * @returns {Promise}
      */
-    async subscribe (senderId, pageId, tag) {
+    async subscribe (senderId, pageId, tag, onlyToKnown) {
+        // !IMPORTANT: do not add a default value to the fourth parameter!
+        const senderIds = Array.isArray(senderId) ? senderId : [senderId];
+
+        if (senderIds.length === 0) {
+            return;
+        }
         const c = await this._getCollection(this.subscribtionsCollection);
 
-        await c.findOneAndUpdate({
-            senderId, pageId
-        }, {
-            $addToSet: { subs: tag }
-        }, {
-            upsert: true
-        });
+        await c.bulkWrite(
+            senderIds.map((sid) => ({
+                updateOne: {
+                    filter: { senderId: sid, pageId },
+                    update: { $addToSet: { subs: tag } },
+                    upsert: !onlyToKnown
+                }
+            }))
+        );
     }
 
     /**
