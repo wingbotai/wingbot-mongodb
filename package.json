@@ -1,11 +1,11 @@
 {
   "name": "wingbot-mongodb",
-  "version": "2.21.1",
+  "version": "2.21.2",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
     "test": "npm run test:lint && npm run test:coverage && npm run test:coverage:threshold",
-    "test:unit": "mocha ./test/**/*.test.js",
+    "test:unit": "mocha ./test/**/*.js",
     "test:unit:watch": "npm run test:unit -- --watch",
     "test:cosmos": "cross-env DB_TYPE=cosmos mocha ./test",
     "test:coverage": "nyc --reporter=html mocha ./test && nyc report",

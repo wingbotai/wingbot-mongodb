@@ -561,6 +561,10 @@ describe('<NotificationsStorage>', function () {
 
     describe('#subscribe()', async () => {
 
+        it('has a good signature', async () => {
+            assert.strictEqual(storage.subscribe.length, 4);
+        });
+
         it('adds subscibtion, but does not override the first ts', async () => {
             await storage.subscribe('sid', 'pid', 'foo');
             await storage.subscribe('sid', 'pid', 'bar');

@@ -793,7 +793,13 @@ class NotificationsStorage {
                     update: { $addToSet: { subs: tag } },
                     upsert: !onlyToKnown
                 }
-            }))
+            })),
+            {
+                ordered: false,
+                writeConcern: {
+                    w: onlyToKnown ? 0 : 1
+                }
+            }
         );
     }
 
