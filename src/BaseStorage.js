@@ -3,11 +3,33 @@
  */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+const { ObjectId } = require('mongodb');
 const crypto = require('crypto');
+const defaultLogger = require('./defaultLogger');
 
-/** @typedef {import('mongodb/lib/db')} Db */
-/** @typedef {import('mongodb/lib/collection')} Collection */
+/** @typedef {import('mongodb').Db} Db */
+/** @typedef {import('mongodb').Collection} Collection */
+/** @typedef {import('mongodb').CreateIndexesOptions} CreateIndexesOptions */
+
+/**
+ *
+ * @param {any} obj
+ * @param {boolean} nested
+ * @param {string} [attr]
+ * @param {object} [ret]
+ * @returns {object}
+ */
+function getNestedObjects (obj, nested, attr = null, ret = {}) {
+    if (typeof obj !== 'object' || !obj || nested === null || Array.isArray(obj)) {
+        Object.assign(ret, { [attr]: obj === undefined ? null : obj });
+    } else {
+        Object.entries(obj)
+            .forEach(([key, val]) => {
+                getNestedObjects(val, nested || null, attr ? `${attr}.${key}` : key, ret);
+            });
+    }
+    return ret;
+}
 
 class BaseStorage {
 
@@ -23,7 +45,7 @@ class BaseStorage {
      *
      * class MyCoolDataStorage extends BaseStorage {
      *
-     *     constructor (mongoDb, collectionName = 'myCoolData', log = console, isCosmo = false) {
+     *     constructor (mongoDb, collectionName, log = undefined, isCosmo = false) {
      *          super(mongoDb, collectionName, log, isCosmo);
      *
      *          this.addIndex({
@@ -42,7 +64,7 @@ class BaseStorage {
      *
      * }
      */
-    constructor (mongoDb, collectionName, log = console, isCosmo = false) {
+    constructor (mongoDb, collectionName, log = defaultLogger, isCosmo = false) {
         this._mongoDb = mongoDb;
         this._collectionName = collectionName;
         this._isCosmo = isCosmo;
@@ -76,7 +98,7 @@ class BaseStorage {
      * Add custom indexing rule
      *
      * @param {object} index
-     * @param {mongodb.IndexOptions} options
+     * @param {CreateIndexesOptions} options
      */
     addIndex (index, options) {
         if (!options.name) {
@@ -86,6 +108,36 @@ class BaseStorage {
             index,
             options
         });
+    }
+
+    /**
+     * @example
+     * {
+     *   _id: ObjectId.isValid(id) ? new ObjectId(input) : input
+     * }
+     *
+     * @protected
+     * @param {string} id
+     * @returns {string|ObjectId}
+     */
+    _id (id) {
+        return ObjectId.isValid(id) && `${id}`.length === 24
+            ? new ObjectId(id)
+            : id;
+    }
+
+    /**
+     *
+     * @param {string|null} attr
+     * @param {{[key: string]: any}} obj
+     * @param {boolean} [nested]
+     * @returns {{[key: string]: any}}
+     */
+    _expandObjectToSet (attr, obj, nested = false) {
+        if (Object.keys(obj).length === 0) {
+            return null;
+        }
+        return getNestedObjects(obj, nested, attr);
     }
 
     async _getOrCreateCollection (name) {
@@ -209,7 +261,7 @@ class BaseStorage {
 
     /**
      *
-     * @private
+     * @protected
      * @template T
      * @param {T} object
      * @returns {T}
