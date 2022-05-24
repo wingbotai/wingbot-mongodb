@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const mongodb = require('mongodb');
+const { MongoClient } = require('mongodb');
 
 const CONNECTION_STRING = 'mongodb://127.0.0.1:27017';
 
@@ -24,9 +24,17 @@ if (!settings) {
     };
 }
 
+/** @typedef {import('mongodb').Db} Db */
+
+/** @type {Promise<MongoClient>} */
 let connectedMongoDb;
 
-async function connect (disconnect) {
+/**
+ *
+ * @param {boolean} [disconnect]
+ * @returns {Promise<Db>}
+ */
+async function connect (disconnect = false) {
     if (disconnect && !connectedMongoDb) {
         return null;
     }
@@ -36,11 +44,13 @@ async function connect (disconnect) {
             .then((connection) => {
                 connectedMongoDb = null;
                 return connection.close();
-            });
+            })
+            .then(() => null);
     }
 
     if (!connectedMongoDb) {
-        connectedMongoDb = mongodb.connect(settings.db, settings.options);
+        connectedMongoDb = new MongoClient(settings.db, settings.options)
+            .connect();
     }
 
     return connectedMongoDb

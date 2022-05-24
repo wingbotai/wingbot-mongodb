@@ -11,8 +11,8 @@ try {
     // noop
 }
 
-/** @typedef {import('mongodb/lib/db')} Db */
-/** @typedef {import('mongodb/lib/collection')} Collection */
+/** @typedef {import('mongodb').Db} Db */
+/** @typedef {import('mongodb').Collection} Collection */
 
 const CONFIG_ID = 'config';
 

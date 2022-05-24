@@ -4,11 +4,12 @@
 'use strict';
 
 const BaseStorage = require('./BaseStorage');
+const defaultLogger = require('./defaultLogger');
 
 const PAGE_SENDER_TIMESTAMP = 'pageId_1_senderId_1_timestamp_-1';
 const TIMESTAMP = 'timestamp_1';
 
-/** @typedef {import('mongodb/lib/db')} Db */
+/** @typedef {import('mongodb').Db} Db */
 
 /**
  * Storage for conversation logs
@@ -25,7 +26,7 @@ class ChatLogStorage extends BaseStorage {
      * @param {boolean} [isCosmo]
      * @param {string|Promise<string>} [secret]
      */
-    constructor (mongoDb, collectionName = 'chatlogs', log = console, isCosmo = false, secret = null) {
+    constructor (mongoDb, collectionName = 'chatlogs', log = defaultLogger, isCosmo = false, secret = null) {
         super(mongoDb, collectionName, log, isCosmo);
 
         this.addIndex({

@@ -3,7 +3,6 @@
 */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 const tokenFactory = require('./tokenFactory');
 
 const TOKEN_INDEX = 'token-index';
@@ -16,6 +15,9 @@ const USER_INDEX = 'user-page-index';
  * @prop {string} token
  */
 
+/** @typedef {import('mongodb').Db} Db */
+/** @typedef {import('mongodb').Collection} Collection */
+
 /**
  * Storage for webview tokens
  *
@@ -25,7 +27,7 @@ class BotTokenStorage {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'tokens') {
@@ -33,13 +35,13 @@ class BotTokenStorage {
         this._collectionName = collectionName;
 
         /**
-         * @type {mongodb.Collection}
+         * @type {Collection}
          */
         this._collection = null;
     }
 
     /**
-     * @returns {Promise<mongodb.Collection>}
+     * @returns {Promise<Collection>}
      */
     async _getCollection () {
         if (this._collection === null) {
@@ -60,8 +62,7 @@ class BotTokenStorage {
                     token: 1
                 }, {
                     unique: true,
-                    name: TOKEN_INDEX,
-                    dropDups: true
+                    name: TOKEN_INDEX
                 });
             }
             try {
@@ -75,8 +76,7 @@ class BotTokenStorage {
                     pageId: 1
                 }, {
                     unique: true,
-                    name: USER_INDEX,
-                    dropDups: true
+                    name: USER_INDEX
                 });
             }
         }

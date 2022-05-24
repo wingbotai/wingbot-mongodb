@@ -5,8 +5,7 @@
 
 const jsonwebtoken = require('jsonwebtoken');
 const BaseStorage = require('./BaseStorage');
-
-/** @typedef {import('mongodb/lib/db')} Db */
+const defaultLogger = require('./defaultLogger');
 
 const LEVEL_CRITICAL = 'Critical';
 const LEVEL_IMPORTANT = 'Important';
@@ -91,6 +90,9 @@ const TYPE_INFO = 'Info';
  * @returns {Promise}
  */
 
+/** @typedef {import('mongodb').Db} Db */
+/** @typedef {import('mongodb').Collection} Collection */
+
 /**
  * Storage for audit logs with signatures chain
  */
@@ -105,7 +107,7 @@ class AuditLogStorage extends BaseStorage {
      * @param {string|Promise<string>} [secret]
      * @param {string|Promise<string>} [jwtVerifier]
      */
-    constructor (mongoDb, collectionName = 'auditlog', log = console, isCosmo = false, secret = null, jwtVerifier = null) {
+    constructor (mongoDb, collectionName = 'auditlog', log = defaultLogger, isCosmo = false, secret = null, jwtVerifier = null) {
         super(mongoDb, collectionName, log, isCosmo);
 
         this.addIndex({

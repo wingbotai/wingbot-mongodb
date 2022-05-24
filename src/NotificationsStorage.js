@@ -4,8 +4,9 @@
 'use strict';
 
 const mongodb = require('mongodb');
+const defaultLogger = require('./defaultLogger');
 
-const { ObjectID } = mongodb;
+const { ObjectId } = mongodb;
 
 /**
  * @typedef Target {Object}
@@ -84,7 +85,7 @@ class NotificationsStorage {
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionsPrefix = '', log = console, isCosmo = false) {
+    constructor (mongoDb, collectionsPrefix = '', log = defaultLogger, isCosmo = false) {
         this._mongoDb = mongoDb;
 
         this.taksCollection = `${collectionsPrefix}notification-tasks`;
@@ -462,8 +463,8 @@ class NotificationsStorage {
         const c = await this._getCollection(this.taksCollection);
 
         const res = await c.findOne({
-            _id: ObjectID.isValid(taskId)
-                ? ObjectID.createFromHexString(taskId)
+            _id: ObjectId.isValid(taskId)
+                ? ObjectId.createFromHexString(taskId)
                 : taskId
         });
 
@@ -479,8 +480,8 @@ class NotificationsStorage {
         const c = await this._getCollection(this.taksCollection);
 
         const res = await c.findOneAndUpdate({
-            _id: ObjectID.isValid(taskId)
-                ? ObjectID.createFromHexString(taskId)
+            _id: ObjectId.isValid(taskId)
+                ? ObjectId.createFromHexString(taskId)
                 : taskId
         }, {
             $set: data
@@ -616,7 +617,7 @@ class NotificationsStorage {
             });
             ret = this._mapCampaign(res.value);
         } else {
-            const id = new ObjectID();
+            const id = new ObjectId();
             ret = { id: id.toHexString(), _id: id, ...campaign };
             if (updateCampaign) {
                 Object.assign(ret, updateCampaign);
@@ -749,7 +750,7 @@ class NotificationsStorage {
             useCondition = {
                 ...useCondition,
                 _id: {
-                    $lt: ObjectID.createFromHexString(key._id)
+                    $lt: ObjectId.createFromHexString(key._id)
                 }
             };
         }
@@ -908,7 +909,7 @@ class NotificationsStorage {
             condition = {
                 ...condition,
                 _id: {
-                    $gt: ObjectID.createFromHexString(key._id)
+                    $gt: ObjectId.createFromHexString(key._id)
                 }
             };
         }

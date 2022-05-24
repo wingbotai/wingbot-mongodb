@@ -3,7 +3,8 @@
  */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
+/** @typedef {import('mongodb').Db} Db */
+/** @typedef {import('mongodb').Collection} Collection */
 
 /**
  * Cache storage for Facebook attachments
@@ -14,7 +15,7 @@ class AttachmentCache {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      */
     constructor (mongoDb, collectionName = 'attachments') {
@@ -22,13 +23,13 @@ class AttachmentCache {
         this._collectionName = collectionName;
 
         /**
-         * @type {mongodb.Collection}
+         * @type {Collection}
          */
         this._collection = null;
     }
 
     /**
-     * @returns {Promise<mongodb.Collection>}
+     * @returns {Promise<Collection>}
      */
     async _getCollection () {
         if (this._collection === null) {
