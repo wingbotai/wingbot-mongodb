@@ -9,6 +9,7 @@ const BaseStorage = require('./BaseStorage');
 const USER_INDEX = 'senderId_1_pageId_1';
 const LAST_INTERACTION_INDEX = 'lastInteraction_1';
 const SEARCH = 'search-text';
+const NAME = 'name_1';
 
 /**
  * @typedef {object} State
@@ -48,7 +49,12 @@ class StateStorage extends BaseStorage {
             { name: LAST_INTERACTION_INDEX }
         );
 
-        if (!isCosmo) {
+        if (isCosmo) {
+            this.addIndex(
+                { name: 1 },
+                { name: NAME }
+            );
+        } else {
             this.addIndex(
                 { '$**': 'text' },
                 { name: SEARCH }
@@ -156,8 +162,12 @@ class StateStorage extends BaseStorage {
 
         if (searchStates) {
             if (this._isCosmo) {
+                const $regex = `^${condition.search.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`;
                 Object.assign(useCondition, {
-                    name: { $regex: condition.search, $options: 'i' }
+                    $or: [
+                        { senderId: { $regex } },
+                        { name: { $regex } }
+                    ]
                 });
             } else {
                 Object.assign(useCondition, {
