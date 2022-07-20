@@ -83,6 +83,17 @@ class BaseStorage {
         this.systemIndexes = ['_id_', '_id'];
 
         this._fixtures = [];
+
+        if (isCosmo) {
+            process.nextTick(() => {
+                const hasUniqueIndex = this._indexes.some((i) => i.options.unique);
+
+                if (hasUniqueIndex) {
+                    this._getCollection()
+                        .catch((e) => log.error(`DB.${this._collectionName} index pre-heat FAILED`, e));
+                }
+            });
+        }
     }
 
     /**
