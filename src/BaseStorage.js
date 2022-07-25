@@ -62,7 +62,7 @@ class BaseStorage {
 
         this._fixtures = [];
 
-        if (isCosmo) {
+        if (isCosmo && !process.argv.some((a) => a.endsWith('mocha'))) {
             process.nextTick(() => {
                 const hasUniqueIndex = this._indexes.some((i) => i.options.unique);
 
