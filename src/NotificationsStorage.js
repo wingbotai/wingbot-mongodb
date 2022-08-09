@@ -242,8 +242,7 @@ class NotificationsStorage {
                     if (i.isTextIndex) {
                         this._doesNotSupportTextIndex = true;
                     } else {
-                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`);
-                        throw e;
+                        this._log.error(`failed to create index ${i.options.name} on ${collection.collectionName}`, e);
                     }
                 })));
     }
