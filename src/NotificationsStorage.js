@@ -100,6 +100,17 @@ class NotificationsStorage {
          * @type {Map<string,Promise<mongodb.Collection>>}
          */
         this._collections = new Map();
+
+        if (isCosmo && !process.argv.some((a) => a.endsWith('mocha'))) {
+            process.nextTick(() => {
+                Promise.all([
+                    this._getCollection(this.taksCollection),
+                    this._getCollection(this.campaignsCollection),
+                    this._getCollection(this.subscribtionsCollection)
+                ])
+                    .catch((e) => log.error('DB.<NotificationsStorage> index pre-heat FAILED', e));
+            });
+        }
     }
 
     async _getOrCreateCollection (name) {
