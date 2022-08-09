@@ -250,7 +250,7 @@ class NotificationsStorage {
             .map((i) => collection
                 .createIndex(i.index, i.options)
                 // @ts-ignore
-                .catch(() => {
+                .catch((e) => {
                     if (i.isTextIndex) {
                         this._doesNotSupportTextIndex = true;
                     } else {
