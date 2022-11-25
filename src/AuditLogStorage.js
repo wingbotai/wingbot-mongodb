@@ -303,7 +303,7 @@ class AuditLogStorage extends BaseStorage {
     }
 
     _wait (ms) {
-        return new Promise((r) => setTimeout(r, ms));
+        return new Promise((r) => { setTimeout(r, ms); });
     }
 
     async _storeWithRetry (secret, entry, delta = 0, i = 1) {

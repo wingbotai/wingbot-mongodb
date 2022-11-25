@@ -134,6 +134,7 @@ class BotTokenStorage {
             returnDocument: 'after'
         });
 
+        // @ts-ignore
         res = res.value;
 
         // @ts-ignore
@@ -150,6 +151,7 @@ class BotTokenStorage {
             // probably collision, try it again
             await this._wait(400);
 
+            // @ts-ignore
             res = await c.findOne({ senderId, pageId });
 
             if (!res) {
@@ -166,7 +168,7 @@ class BotTokenStorage {
     }
 
     _wait (ms) {
-        return new Promise((r) => setTimeout(r, ms));
+        return new Promise((r) => { setTimeout(r, ms); });
     }
 
 }

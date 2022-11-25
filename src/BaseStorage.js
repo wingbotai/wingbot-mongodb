@@ -238,15 +238,17 @@ class BaseStorage {
         if (updated || existing.every((i) => this.systemIndexes.includes(i.name))) {
             // upsert fixtures
 
-            await this._fixtures.reduce((p, o) => p
-                .then(() => collection.insertOne(o))
-                .then(() => this._log.log(`DB.${this._collectionName} Inserted fixture doc to "${this._collectionName}"`))
-                .catch((e) => {
-                    if (e.code !== 11000) {
-                        this._log.error(`DB.${this._collectionName} failed to insert fixture doc to "${this._collectionName}"`, e);
-                    }
-                }),
-            Promise.resolve());
+            await this._fixtures.reduce(
+                (p, o) => p
+                    .then(() => collection.insertOne(o))
+                    .then(() => this._log.log(`DB.${this._collectionName} Inserted fixture doc to "${this._collectionName}"`))
+                    .catch((e) => {
+                        if (e.code !== 11000) {
+                            this._log.error(`DB.${this._collectionName} failed to insert fixture doc to "${this._collectionName}"`, e);
+                        }
+                    }),
+                Promise.resolve()
+            );
         }
     }
 

@@ -60,7 +60,7 @@ class BotConfigStorage {
      * @param {Function|string[]} [acl] - acl configuration
      * @returns {{updateBot:Function}}
      */
-    api (onUpdate = () => Promise.resolve(), acl) {
+    api (onUpdate = () => Promise.resolve(), acl = undefined) {
         const storage = this;
         return {
             async updateBot (args, ctx) {
