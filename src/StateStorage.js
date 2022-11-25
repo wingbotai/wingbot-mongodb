@@ -3,8 +3,8 @@
 */
 'use strict';
 
-const mongodb = require('mongodb'); // eslint-disable-line no-unused-vars
 const BaseStorage = require('./BaseStorage');
+const defaultLogger = require('./defaultLogger');
 
 const USER_INDEX = 'senderId_1_pageId_1';
 const LAST_INTERACTION_INDEX = 'lastInteraction_1';
@@ -23,6 +23,8 @@ const NAME = 'name_1';
  * @prop {string} [search]
  */
 
+/** @typedef {import('mongodb').Db} Db */
+
 /**
  * Storage for chat states
  *
@@ -32,17 +34,17 @@ class StateStorage extends BaseStorage {
 
     /**
      *
-     * @param {mongodb.Db|{():Promise<mongodb.Db>}} mongoDb
+     * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
      * @param {boolean} isCosmo
      */
-    constructor (mongoDb, collectionName = 'states', log = console, isCosmo = false) {
+    constructor (mongoDb, collectionName = 'states', log = defaultLogger, isCosmo = false) {
         super(mongoDb, collectionName, log, isCosmo);
 
         this.addIndex(
             { senderId: 1, pageId: 1 },
-            { name: USER_INDEX, unique: true, dropDups: true }
+            { name: USER_INDEX, unique: true }
         );
         this.addIndex(
             { lastInteraction: isCosmo ? 1 : -1 },
@@ -83,7 +85,9 @@ class StateStorage extends BaseStorage {
      */
     async getState (senderId, pageId) {
         const c = await this._getCollection();
-        return c.findOne({ senderId, pageId }, { projection: { _id: 0 } });
+        const doc = await c.findOne({ senderId, pageId }, { projection: { _id: 0 } });
+        // @ts-ignore
+        return doc;
     }
 
     /**
