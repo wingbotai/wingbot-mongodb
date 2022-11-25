@@ -55,7 +55,7 @@ class BaseStorage {
 
         this._indexes = [];
 
-        this.ignoredSignatureKeys = ['_id', 'sign'];
+        this.ignoredSignatureKeys = ['_id', 'sign', 'signJson'];
         this._secret = null;
 
         this.systemIndexes = ['_id_', '_id'];
@@ -214,7 +214,8 @@ class BaseStorage {
         const sign = this._signWithSecret(objToSign, secret);
 
         return Object.assign(objToSign, {
-            sign
+            sign,
+            signJson: JSON.stringify(objToSign)
         });
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "2.21.7",
+  "version": "2.21.8-canary.1",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
