@@ -96,6 +96,10 @@ class BaseStorage {
         }
     }
 
+    preHeat () {
+        return this._getCollection();
+    }
+
     /**
      * Insert defalt document to DB
      *
