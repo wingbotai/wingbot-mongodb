@@ -56,6 +56,6 @@
     "wingbot": "^3.0.0"
   },
   "dependencies": {
-    "jsonwebtoken": "^8.5.1"
+    "jsonwebtoken": "^9.0.0"
   }
 }
