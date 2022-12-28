@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "test:unit:watch": "npm run test:unit -- --watch",
     "test:cosmos": "cross-env DB_TYPE=cosmos mocha ./test",
     "test:coverage": "nyc --reporter=html mocha ./test && nyc report",
-    "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 78 --branches 75",
+    "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 75 --branches 75",
     "test:lint": "eslint ./src/**/*.js ./bin/**/*.js ./test/**/*.js ",
     "doc": "node ./bin/makeApiDoc.js"
   },
@@ -27,7 +27,7 @@
   "author": "wingbot.ai",
   "license": "MIT",
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=12.0.0"
   },
   "bugs": {
     "url": "https://github.com/wingbotai/wingbot-mongodb/issues"
@@ -47,7 +47,7 @@
     "mocha": "^10.1.0",
     "mongodb": "^4.12.1",
     "nyc": "^15.1.0",
-    "wingbot": "^3.34.0"
+    "wingbot": "^3.46.3"
   },
   "peerDependencies": {
     "mongodb": "^4.0.0"
@@ -56,6 +56,6 @@
     "wingbot": "^3.0.0"
   },
   "dependencies": {
-    "jsonwebtoken": "^8.5.1"
+    "jsonwebtoken": "^9.0.0"
   }
 }
