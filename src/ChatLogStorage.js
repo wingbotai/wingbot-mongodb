@@ -8,6 +8,7 @@ const defaultLogger = require('./defaultLogger');
 
 const PAGE_SENDER_TIMESTAMP = 'pageId_1_senderId_1_timestamp_-1';
 const TIMESTAMP = 'timestamp_1';
+const SENDER = 'senderId_1';
 
 /** @typedef {import('mongodb').Db} Db */
 
@@ -42,6 +43,12 @@ class ChatLogStorage extends BaseStorage {
                 timestamp: 1
             }, {
                 name: TIMESTAMP
+            });
+
+            this.addIndex({
+                senderId: 1
+            }, {
+                name: SENDER
             });
         }
 
