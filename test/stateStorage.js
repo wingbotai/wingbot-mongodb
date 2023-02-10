@@ -3,6 +3,7 @@
  */
 'use strict';
 
+const { MongoClient } = require('mongodb');
 const assert = require('assert');
 const mongodb = require('./mongodb');
 const StateStorage = require('../src/StateStorage');
@@ -161,6 +162,37 @@ describe('<StateStorage>', function () {
 
             assert.strictEqual(lastKey, null);
         });
+
+    });
+
+    describe('#kill feature', () => {
+
+        it('kills the application, if network error occurs', (done) => {
+            const connection = new MongoClient('mongodb://localhost:6666/any', {
+                connectTimeoutMS: 500,
+                serverSelectionTimeoutMS: 500
+            });
+
+            const s = new StateStorage(connection.db('db'), 'anystate', console, 2);
+
+            s.getOrCreateAndLock('sender', 'pid', {}, 1000)
+                .catch((e) => {
+                    // eslint-disable-next-line
+                    console.log(e.message);
+
+                    // @ts-ignore
+                    s.killer = () => {
+                        done();
+                    };
+
+                    s.getOrCreateAndLock('sender', 'pid', {}, 1000)
+                        .catch((er) => {
+                            // eslint-disable-next-line
+                            console.log(er.message);
+                        });
+                });
+
+        }).timeout(10000);
 
     });
 

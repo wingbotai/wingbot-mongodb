@@ -37,10 +37,10 @@ class StateStorage extends BaseStorage {
      * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
-     * @param {boolean} isCosmo
+     * @param {boolean|number} isCosmo - boolean or number of failures in last 10min to kill app
      */
     constructor (mongoDb, collectionName = 'states', log = defaultLogger, isCosmo = false) {
-        super(mongoDb, collectionName, log, isCosmo);
+        super(mongoDb, collectionName, log, typeof isCosmo === 'number' || isCosmo);
 
         this.addIndex(
             { senderId: 1, pageId: 1 },
@@ -50,6 +50,10 @@ class StateStorage extends BaseStorage {
             { lastInteraction: isCosmo ? 1 : -1 },
             { name: LAST_INTERACTION_INDEX }
         );
+
+        this._failStack = [];
+
+        this._failures = typeof isCosmo === 'number' ? isCosmo : 0;
 
         if (isCosmo) {
             this.addIndex(
@@ -63,6 +67,20 @@ class StateStorage extends BaseStorage {
             );
         }
 
+        this.failuresIntervalMs = 600000; // 10 minutes
+
+        this._killing = null;
+
+        this.networkFailureErrorNames = [
+            'MongoServerSelectionError',
+            'MongoNetworkError',
+            'MongoNetworkTimeoutError',
+            'MongoTopologyClosedError'
+        ];
+
+        this.killer = () => setTimeout(() => {
+            process.exit(1);
+        }, 10000);
     }
 
     /**
@@ -100,38 +118,59 @@ class StateStorage extends BaseStorage {
      * @returns {Promise<object>} - conversation state
      */
     async getOrCreateAndLock (senderId, pageId, defaultState = {}, timeout = 300) {
-        const now = Date.now();
+        let now = Date.now();
+        try {
+            const c = await this._getCollection();
 
-        const c = await this._getCollection();
+            const $setOnInsert = {
+                state: defaultState,
+                lastSendError: null,
+                off: false
+            };
 
-        const $setOnInsert = {
-            state: defaultState,
-            lastSendError: null,
-            off: false
-        };
+            const $set = {
+                lock: now
+            };
 
-        const $set = {
-            lock: now
-        };
+            const $lt = now - timeout;
 
-        const $lt = now - timeout;
+            const res = await c.findOneAndUpdate({
+                senderId,
+                pageId,
+                lock: { $lt }
+            }, {
+                $setOnInsert,
+                $set
+            }, {
+                upsert: true,
+                returnDocument: 'after',
+                projection: {
+                    _id: 0
+                }
+            });
 
-        const res = await c.findOneAndUpdate({
-            senderId,
-            pageId,
-            lock: { $lt }
-        }, {
-            $setOnInsert,
-            $set
-        }, {
-            upsert: true,
-            returnDocument: 'after',
-            projection: {
-                _id: 0
+            return res.value;
+        } catch (e) {
+            if (this._failures !== 0
+                && this.networkFailureErrorNames.includes(e.name)) {
+
+                now = Date.now();
+                this._failStack.push(now);
+
+                if (this._failStack.length >= this._failures
+                    && this._failStack.shift() > (now - this.failuresIntervalMs)
+                    && this._killing === null) {
+
+                    this._log.error(`StateStorage: KILLING APP DUE FREQUENT NETWORK ERRORS ${this._failStack.length}`, e);
+
+                    // let it alive for following ten seconds to process all logs
+                    this._killing = this.killer() || null;
+                }
             }
-        });
 
-        return res.value;
+            throw e;
+        }
+
     }
 
     /**
