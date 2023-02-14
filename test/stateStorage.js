@@ -7,6 +7,7 @@ const { MongoClient } = require('mongodb');
 const assert = require('assert');
 const mongodb = require('./mongodb');
 const StateStorage = require('../src/StateStorage');
+const BaseStorage = require('../src/BaseStorage');
 
 const SENDER_ID = 'hello';
 const SENDER_ID2 = 'hello2';
@@ -181,7 +182,7 @@ describe('<StateStorage>', function () {
                     console.log(e.message);
 
                     // @ts-ignore
-                    s.killer = () => {
+                    BaseStorage.killer = () => {
                         done();
                     };
 

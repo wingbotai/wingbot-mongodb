@@ -33,12 +33,31 @@ function getNestedObjects (obj, nested, attr = null, ret = {}) {
 
 class BaseStorage {
 
+    static netFailuresIntervalMs = 600000; // 10 minutes
+
+    static netFailuresCount = 0;
+
+    static _killing = null;
+
+    static _failStack = [];
+
+    static killer = () => setTimeout(() => {
+        process.exit(1);
+    }, 10000);
+
+    static networkFailureErrorNames = [
+        'MongoServerSelectionError',
+        'MongoNetworkError',
+        'MongoNetworkTimeoutError',
+        'MongoTopologyClosedError'
+    ];
+
     /**
      *
      * @param {Db|{():Promise<Db>}} mongoDb
      * @param {string} collectionName
      * @param {{error:Function,log:Function}} [log] - console like logger
-     * @param {boolean} [isCosmo]
+     * @param {boolean|number} [isCosmo]
      * @example
      *
      * const { BaseStorage } = require('winbot-mongodb');
@@ -67,7 +86,7 @@ class BaseStorage {
     constructor (mongoDb, collectionName, log = defaultLogger, isCosmo = false) {
         this._mongoDb = mongoDb;
         this._collectionName = collectionName;
-        this._isCosmo = isCosmo;
+        this._isCosmo = typeof isCosmo === 'number' || isCosmo;
         this._log = log;
 
         /**
@@ -84,7 +103,11 @@ class BaseStorage {
 
         this._fixtures = [];
 
-        if (isCosmo && !process.argv.some((a) => a.endsWith('mocha'))) {
+        if (typeof isCosmo === 'number') {
+            BaseStorage.netFailuresCount = isCosmo;
+        }
+
+        if (this._isCosmo && !process.argv.some((a) => a.endsWith('mocha'))) {
             process.nextTick(() => {
                 const hasUniqueIndex = this._indexes.some((i) => i.options.unique);
 
@@ -94,6 +117,45 @@ class BaseStorage {
                 }
             });
         }
+    }
+
+    /**
+     *
+     * @template T
+     * @param {{():T}} fn
+     * @returns {Promise<T>}
+     */
+    _catchNetworkIssues (fn) {
+        return Promise.resolve(fn())
+            .catch((e) => {
+                this._detectNetworkIssueException(e);
+                throw e;
+            });
+    }
+
+    /**
+     * @template {Error} T
+     * @param {T} e
+     * @returns {T}
+     */
+    _detectNetworkIssueException (e) {
+        if (BaseStorage.netFailuresCount !== 0
+            && BaseStorage.networkFailureErrorNames.includes(e.name)) {
+
+            const now = Date.now();
+            BaseStorage._failStack.push(now);
+
+            if (BaseStorage._failStack.length >= BaseStorage.netFailuresCount
+                && BaseStorage._failStack.shift() > (now - BaseStorage.netFailuresIntervalMs)
+                && BaseStorage._killing === null) {
+
+                this._log.error(`${this._collectionName}: KILLING APP DUE FREQUENT NETWORK ERRORS ${BaseStorage._failStack.length}`, e);
+
+                // let it alive for following ten seconds to process all logs
+                BaseStorage._killing = BaseStorage.killer() || null;
+            }
+        }
+        return e;
     }
 
     preHeat () {
@@ -201,6 +263,7 @@ class BaseStorage {
                 this._collection = c;
             } catch (e) {
                 this._collection = null;
+                this._detectNetworkIssueException(e);
                 throw e;
             }
         }
