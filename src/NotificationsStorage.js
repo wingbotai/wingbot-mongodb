@@ -303,13 +303,14 @@ class NotificationsStorage {
 
         const findMissingIds = tasks
             .reduce((arr, {
-                campaignId, senderId, pageId, sent
+                campaignId, senderId, pageId, sent, enqueue
             }, i) => {
                 if (typeof res.upsertedIds[i] !== 'undefined') {
                     return arr;
                 }
                 arr.push({
                     i,
+                    enqueue,
                     filter: {
                         campaignId, senderId, pageId, sent
                     }
@@ -321,23 +322,31 @@ class NotificationsStorage {
 
         if (findMissingIds.length > 0) {
             await Promise.all(findMissingIds
-                .map(({ filter, i }) => c.findOne(filter, {
+                .map(({ filter, i, enqueue }) => c.findOne(filter, {
                     projection: {
                         _id: 1, insEnqueue: 1, enqueue: 1, ups: 1
                     }
                 })
                     .then((found) => {
-                        const id = typeof found._id === 'string'
-                            ? found._id
-                            : found._id.toHexString();
-                        missingIds.set(i, {
-                            id,
-                            insEnqueue: found.insEnqueue,
-                            enqueue: found.insEnqueue === found.enqueue
-                                && found.enqueue !== MAX_TS && found.ups !== 1
-                                ? found.enqueue + 1
-                                : found.enqueue
-                        });
+                        if (!found) { // race condition occurred
+                            missingIds.set(i, {
+                                id: null,
+                                insEnqueue: -1,
+                                enqueue
+                            });
+                        } else {
+                            const id = typeof found._id === 'string'
+                                ? found._id
+                                : found._id.toHexString();
+                            missingIds.set(i, {
+                                id,
+                                insEnqueue: found.insEnqueue,
+                                enqueue: found.insEnqueue === found.enqueue
+                                    && found.enqueue !== MAX_TS && found.ups !== 1
+                                    ? found.enqueue + 1
+                                    : found.enqueue
+                            });
+                        }
                     })));
         }
 
