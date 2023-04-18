@@ -270,6 +270,12 @@ class BaseStorage {
         return this._collection;
     }
 
+    /**
+     *
+     * @param {object[]} indexes
+     * @param {Collection} collection
+     * @returns {Promise}
+     */
     async _ensureIndexes (indexes, collection) {
         let existing;
         try {
@@ -290,7 +296,7 @@ class BaseStorage {
                     });
             }, Promise.resolve());
 
-        const updated = await indexes
+        let updated = await indexes
             .filter((i) => !existing.some((e) => e.name === i.options.name))
             .reduce((p, i) => {
                 this._log.log(`DB.${this._collectionName} creating index ${i.options.name}`);
@@ -302,21 +308,47 @@ class BaseStorage {
                     .then(() => true);
             }, Promise.resolve(false));
 
-        if (updated || existing.every((i) => this.systemIndexes.includes(i.name))) {
-            // upsert fixtures
-
-            await this._fixtures.reduce(
-                (p, o) => p
-                    .then(() => collection.insertOne(o))
-                    .then(() => this._log.log(`DB.${this._collectionName} Inserted fixture doc to "${this._collectionName}"`))
-                    .catch((e) => {
-                        if (e.code !== 11000) {
-                            this._log.error(`DB.${this._collectionName} failed to insert fixture doc to "${this._collectionName}"`, e);
-                        }
-                    }),
-                Promise.resolve()
-            );
+        if (!updated) {
+            updated = existing.every((i) => this.systemIndexes.includes(i.name));
         }
+
+        let fixtures = this._fixtures;
+
+        const $in = fixtures
+            .map((f) => f._id)
+            .filter((f) => !!f);
+
+        if (!updated && $in.length !== 0) {
+            const found = await collection
+                .find({ _id: { $in } })
+                .project({ _id: 1 })
+                .map((doc) => doc._id.toString())
+                .toArray();
+
+            if (found.length !== $in.length) {
+                updated = true;
+                fixtures = fixtures
+                    .filter((f) => !f._id || !found.includes(f._id.toString()));
+            }
+        }
+
+        if (!updated || fixtures.length === 0) {
+            return;
+        }
+
+        await fixtures.reduce(
+            (p, o) => p
+                .then(() => collection.insertOne(o))
+                .then(() => this._log.log(`DB.${this._collectionName} Inserted fixture doc to "${this._collectionName}"`))
+                .catch((e) => {
+                    if (e.code === 11000) {
+                        this._log.log(`DB.${this._collectionName} fixture not inserted: ${e.message}`);
+                    } else {
+                        this._log.error(`DB.${this._collectionName} failed to insert fixture doc to "${this._collectionName}"`, e);
+                    }
+                }),
+            Promise.resolve()
+        );
     }
 
     /**
