@@ -103,6 +103,8 @@ class BaseStorage {
 
         this._fixtures = [];
 
+        this._uniqueIndexFailed = false;
+
         if (typeof isCosmo === 'number') {
             BaseStorage.netFailuresCount = isCosmo;
         }
@@ -303,6 +305,9 @@ class BaseStorage {
                 return p
                     .then(() => collection.createIndex(i.index, i.options))
                     .catch((e) => {
+                        if (i.options.unique) {
+                            this._uniqueIndexFailed = true;
+                        }
                         this._log.error(`DB.${this._collectionName} failed to create index ${i.options.name} on ${collection.collectionName}`, e);
                     })
                     .then(() => true);

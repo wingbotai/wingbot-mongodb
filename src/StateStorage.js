@@ -51,6 +51,8 @@ class StateStorage extends BaseStorage {
             { name: LAST_INTERACTION_INDEX }
         );
 
+        this.logCollisionsAsErrors = false;
+
         if (isCosmo) {
             this.addIndex(
                 { name: 1 },
@@ -84,7 +86,12 @@ class StateStorage extends BaseStorage {
      */
     async getState (senderId, pageId) {
         const c = await this._getCollection();
-        const doc = await c.findOne({ senderId, pageId }, { projection: { _id: 0 } });
+        const doc = await c.findOne({
+            senderId, pageId
+        }, {
+            projection: { _id: 0 },
+            ...(this._uniqueIndexFailed ? { sort: { lastInteraction: -1 } } : {})
+        });
         // @ts-ignore
         return doc;
     }
@@ -123,11 +130,43 @@ class StateStorage extends BaseStorage {
             $set
         }, {
             upsert: true,
+            ...(this._uniqueIndexFailed ? { sort: { lastInteraction: -1 } } : {}),
             returnDocument: 'after',
             projection: {
                 _id: 0
             }
         }));
+
+        if (this._uniqueIndexFailed && !res.value.lastInteraction) {
+            // check if there was a locked state
+            const existing = await c.find({
+                senderId,
+                pageId
+            })
+                .sort({ lastInteraction: -1 })
+                .toArray();
+
+            if (existing.length > 1) {
+
+                // remove entries without lastInteraction
+                const $in = existing
+                    .filter((s) => !s.lastInteraction && (s.lock === now || s.lock < $lt))
+                    .map((s) => s._id);
+
+                const logLevel = this.logCollisionsAsErrors ? 'error' : 'log';
+                this._log[logLevel]('StateStorage: unique index workaround DETECTED', {
+                    v: res.value, existing, $in: $in.map((i) => i.toString())
+                });
+
+                if ($in.length > 0) {
+                    await c.deleteMany({ _id: { $in } });
+                }
+
+                throw Object.assign(new Error('State was locked'), { code: 11000 });
+            } else {
+                this._log.log('StateStorage: unique index workaround OK', res.value);
+            }
+        }
 
         return res.value;
     }
@@ -245,13 +284,24 @@ class StateStorage extends BaseStorage {
 
         const { senderId, pageId } = state;
 
-        await c.updateOne({
-            senderId, pageId
-        }, {
-            $set: state
-        }, {
-            upsert: true
-        });
+        if (this._uniqueIndexFailed) {
+            await c.findOneAndUpdate({
+                senderId, pageId
+            }, {
+                $set: state
+            }, {
+                sort: { lastInteraction: -1 },
+                upsert: true
+            });
+        } else {
+            await c.updateOne({
+                senderId, pageId
+            }, {
+                $set: state
+            }, {
+                upsert: true
+            });
+        }
 
         return state;
     }

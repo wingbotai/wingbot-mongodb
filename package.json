@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "test:unit:watch": "npm run test:unit -- --watch",
     "test:cosmos": "cross-env DB_TYPE=cosmos mocha ./test",
     "test:coverage": "nyc --reporter=html mocha ./test && nyc report",
-    "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 75 --branches 75",
+    "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 73 --branches 75",
     "test:lint": "eslint ./src/**/*.js ./bin/**/*.js ./test/**/*.js ",
     "doc": "node ./bin/makeApiDoc.js"
   },

@@ -58,6 +58,41 @@ describe('<StateStorage>', function () {
 
     });
 
+    describe('#getOrCreateAndLock() without unique index', () => {
+
+        this.beforeEach(() => {
+            ss._indexes = ss._indexes.filter((i) => !i.options.unique);
+            ss._uniqueIndexFailed = true;
+        });
+
+        it('creates state and locks it', async () => {
+            let res = await ss.getOrCreateAndLock(SENDER_ID, PAGE_ID, {}, 2000);
+
+            let thrownError = null;
+
+            try {
+                res = await ss.getOrCreateAndLock(SENDER_ID, PAGE_ID, {}, 2000);
+            } catch (e) {
+                thrownError = e;
+            }
+
+            const all = await ss.getStates();
+
+            assert.strictEqual(all.data.length, 1);
+
+            assert.ok(thrownError !== null);
+            assert.strictEqual(thrownError.code, 11000);
+
+            assert.strictEqual(typeof res, 'object');
+            assert.strictEqual(res.senderId, SENDER_ID);
+            assert.strictEqual(res.pageId, PAGE_ID);
+            assert.deepStrictEqual(res.state, {});
+
+            await ss.saveState(res);
+        });
+
+    });
+
     describe('#getState()', () => {
 
         it('returns zero state', async () => {
