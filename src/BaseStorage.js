@@ -31,6 +31,17 @@ function getNestedObjects (obj, nested, attr = null, ret = {}) {
     return ret;
 }
 
+/**
+ *
+ * @template T
+ * @param {string} k
+ * @param {T} v
+ * @returns {T|null}
+ */
+function signReplacer (k, v) {
+    return v === undefined ? null : v;
+}
+
 class BaseStorage {
 
     static netFailuresIntervalMs = 600000; // 10 minutes
@@ -409,7 +420,7 @@ class BaseStorage {
      */
     _signWithSecret (objToSign, secret, previous = null) {
         const h = crypto.createHmac('sha3-224', secret)
-            .update(JSON.stringify(objToSign));
+            .update(JSON.stringify(objToSign, signReplacer));
 
         if (previous) {
             h.update(previous);
