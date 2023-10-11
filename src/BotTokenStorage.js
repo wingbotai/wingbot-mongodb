@@ -135,9 +135,6 @@ class BotTokenStorage {
         });
 
         // @ts-ignore
-        res = res.value;
-
-        // @ts-ignore
         if (res.token === temporaryInsecureToken) {
 
             const token = await createToken();

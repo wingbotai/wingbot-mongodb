@@ -20,7 +20,7 @@ if (process.env.DB_TYPE === 'cosmos') {
 if (!settings) {
     settings = {
         db: CONNECTION_STRING,
-        options: { useNewUrlParser: true }
+        options: {}
     };
 }
 

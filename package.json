@@ -1,6 +1,6 @@
 {
   "name": "wingbot-mongodb",
-  "version": "3.2.6",
+  "version": "4.0.0",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
   "scripts": {
@@ -27,7 +27,7 @@
   "author": "wingbot.ai",
   "license": "MIT",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.0.0"
   },
   "bugs": {
     "url": "https://github.com/wingbotai/wingbot-mongodb/issues"
@@ -45,12 +45,12 @@
     "jsdoc-to-markdown": "^7.1.1",
     "jsdoc-tsimport-plugin": "^1.0.5",
     "mocha": "^10.1.0",
-    "mongodb": "^4.12.1",
+    "mongodb": "^6.1.0",
     "nyc": "^15.1.0",
     "wingbot": "^3.46.3"
   },
   "peerDependencies": {
-    "mongodb": "^4.0.0"
+    "mongodb": "^6.0.0"
   },
   "optionalDependencies": {
     "wingbot": "^3.0.0"

@@ -4,6 +4,7 @@
 'use strict';
 
 const { ObjectId } = require('mongodb');
+const { strict: assert } = require('assert');
 const crypto = require('crypto');
 const defaultLogger = require('./defaultLogger');
 
@@ -36,10 +37,16 @@ function getNestedObjects (obj, nested, attr = null, ret = {}) {
  * @template T
  * @param {string} k
  * @param {T} v
- * @returns {T|null}
+ * @returns {T|null|string}
  */
 function signReplacer (k, v) {
-    return v === undefined ? null : v;
+    if (v === undefined) {
+        return null;
+    }
+    if (v instanceof Date) {
+        return v.toISOString();
+    }
+    return v;
 }
 
 class BaseStorage {
@@ -130,6 +137,10 @@ class BaseStorage {
                 }
             });
         }
+
+        this._indexing = null;
+        this._shouldIndexBeforeRead = null;
+        this._shouldWaitForIndex = null;
     }
 
     /**
@@ -178,7 +189,7 @@ class BaseStorage {
     /**
      * Insert defalt document to DB
      *
-     * @param  {...any} objects
+     * @param  {...{ _id: string|number|ObjectId }} objects
      */
     addFixtureDoc (...objects) {
         this._fixtures.push(...objects);
@@ -256,7 +267,20 @@ class BaseStorage {
             collection = db.collection(name);
         }
 
-        await this._ensureIndexes(this._indexes, collection);
+        this._shouldIndexBeforeRead = this._fixtures.length !== 0;
+        this._shouldWaitForIndex = this._isCosmo
+            || this._shouldIndexBeforeRead
+            || this._indexes.some((i) => i.options.unique);
+
+        this._indexing = this._ensureIndexes(this._indexes, collection)
+            .then(() => {
+                this._indexing = false;
+            })
+            .catch((e) => {
+                this._collection = null;
+                this._log.log(`DB.${this._collectionName} - init failed`, e);
+                return e;
+            });
 
         return collection;
     }
@@ -265,9 +289,10 @@ class BaseStorage {
      * Returns the collection to operate with
      *
      * @protected
+     * @param {boolean} [forRead]
      * @returns {Promise<Collection>}
      */
-    async _getCollection () {
+    async _getCollection (forRead = false) {
         if (this._collection === null) {
             let c;
             try {
@@ -280,6 +305,16 @@ class BaseStorage {
                 throw e;
             }
         }
+
+        if (this._indexing
+            && this._shouldWaitForIndex
+            && (!forRead || this._shouldIndexBeforeRead)) {
+
+            const err = await this._indexing;
+            this._indexing = false;
+            if (err) throw err;
+        }
+
         return this._collection;
     }
 
@@ -290,12 +325,10 @@ class BaseStorage {
      * @returns {Promise}
      */
     async _ensureIndexes (indexes, collection) {
-        let existing;
-        try {
-            existing = await collection.indexes();
-        } catch (e) {
-            existing = [];
-        }
+        const [existing, fixtures] = await Promise.all([
+            this._checkExistingIndexes(collection),
+            this._checkFixtures(collection)
+        ]);
 
         await existing
             .filter((e) => !this.systemIndexes.includes(e.name)
@@ -309,7 +342,7 @@ class BaseStorage {
                     });
             }, Promise.resolve());
 
-        let updated = await indexes
+        await indexes
             .filter((i) => !existing.some((e) => e.name === i.options.name))
             .reduce((p, i) => {
                 this._log.log(`DB.${this._collectionName} creating index ${i.options.name}`);
@@ -324,31 +357,7 @@ class BaseStorage {
                     .then(() => true);
             }, Promise.resolve(false));
 
-        if (!updated) {
-            updated = existing.every((i) => this.systemIndexes.includes(i.name));
-        }
-
-        let fixtures = this._fixtures;
-
-        const $in = fixtures
-            .map((f) => f._id)
-            .filter((f) => !!f);
-
-        if (!updated && $in.length !== 0) {
-            const found = await collection
-                .find({ _id: { $in } })
-                .project({ _id: 1 })
-                .map((doc) => doc._id.toString())
-                .toArray();
-
-            if (found.length !== $in.length) {
-                updated = true;
-                fixtures = fixtures
-                    .filter((f) => !f._id || !found.includes(f._id.toString()));
-            }
-        }
-
-        if (!updated || fixtures.length === 0) {
+        if (fixtures.length === 0) {
             return;
         }
 
@@ -365,6 +374,45 @@ class BaseStorage {
                 }),
             Promise.resolve()
         );
+    }
+
+    async _checkExistingIndexes (collection) {
+        let existing;
+        try {
+            existing = await collection.indexes();
+        } catch (e) {
+            existing = [];
+        }
+        return existing;
+    }
+
+    async _checkFixtures (collection) {
+        if (this._fixtures.length === 0) {
+            return this._fixtures;
+        }
+
+        const fixtures = this._fixtures
+            .map((f) => {
+                assert(f._id, `DB.${this._collectionName} fixture must have _id property`);
+                return {
+                    ...f,
+                    _id: this._id(f._id)
+                };
+            });
+
+        const $in = fixtures.map((f) => f._id);
+
+        const found = await collection
+            .find({ _id: { $in } })
+            .project({ _id: 1 })
+            .map((doc) => doc._id.toString())
+            .toArray();
+
+        if (found.length === $in.length) {
+            return [];
+        }
+
+        return fixtures.filter((f) => !found.includes(f._id.toString()));
     }
 
     /**
@@ -400,11 +448,15 @@ class BaseStorage {
 
         entries.sort();
 
+        const objectClone = typeof structuredClone === 'function'
+            ? (val) => structuredClone(val)
+            : (val) => JSON.parse(JSON.stringify(val, signReplacer));
+
         // @ts-ignore
         return entries.reduce((o, key) => {
             let val = object[key];
-            if (val instanceof Date) {
-                val = val.toISOString();
+            if (val !== null && typeof val === 'object') {
+                val = objectClone(val);
             }
             return Object.assign(o, { [key]: val });
         }, {});

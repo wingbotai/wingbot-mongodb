@@ -137,7 +137,7 @@ class StateStorage extends BaseStorage {
             }
         }));
 
-        if (this._uniqueIndexFailed && !res.value.lastInteraction) {
+        if (this._uniqueIndexFailed && !res.lastInteraction) {
             // check if there was a locked state
             const existing = await c.find({
                 senderId,
@@ -155,7 +155,7 @@ class StateStorage extends BaseStorage {
 
                 const logLevel = this.logCollisionsAsErrors ? 'error' : 'log';
                 this._log[logLevel]('StateStorage: unique index workaround DETECTED', {
-                    v: res.value, existing, $in: $in.map((i) => i.toString())
+                    v: res, existing, $in: $in.map((i) => i.toString())
                 });
 
                 if ($in.length > 0) {
@@ -164,11 +164,11 @@ class StateStorage extends BaseStorage {
 
                 throw Object.assign(new Error('State was locked'), { code: 11000 });
             } else {
-                this._log.log('StateStorage: unique index workaround OK', res.value);
+                this._log.log('StateStorage: unique index workaround OK', res);
             }
         }
 
-        return res.value;
+        return res;
     }
 
     /**

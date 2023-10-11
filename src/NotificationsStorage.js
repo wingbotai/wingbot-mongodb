@@ -403,8 +403,8 @@ class NotificationsStorage {
                 sort: { enqueue: 1 },
                 returnDocument: 'after'
             });
-            if (found.value) {
-                pop.push(this._mapGenericObject(found.value));
+            if (found) {
+                pop.push(this._mapGenericObject(found));
                 go = pop.length < limit;
             } else {
                 go = false;
@@ -498,7 +498,7 @@ class NotificationsStorage {
             returnDocument: 'after'
         });
 
-        return this._mapGenericObject(res.value);
+        return this._mapGenericObject(res);
     }
 
     /**
@@ -590,7 +590,7 @@ class NotificationsStorage {
         );
 
         return result
-            .map((res) => (res.value ? this._mapGenericObject(res.value) : null))
+            .map((res) => (res ? this._mapGenericObject(res) : null))
             .filter((r) => r !== null);
     }
 
@@ -624,7 +624,7 @@ class NotificationsStorage {
                 upsert: true,
                 returnDocument: 'after'
             });
-            ret = this._mapCampaign(res.value);
+            ret = this._mapCampaign(res);
         } else {
             const id = new ObjectId();
             ret = { id: id.toHexString(), _id: id, ...campaign };
@@ -684,7 +684,7 @@ class NotificationsStorage {
             returnDocument: 'after'
         });
 
-        return this._mapCampaign(res.value);
+        return this._mapCampaign(res);
     }
 
     /**
@@ -704,7 +704,7 @@ class NotificationsStorage {
             returnDocument: 'before'
         });
 
-        return this._mapCampaign(res.value);
+        return this._mapCampaign(res);
     }
 
     /**
@@ -845,9 +845,9 @@ class NotificationsStorage {
                 returnDocument: 'after'
             });
 
-            if (res.value) {
+            if (res) {
                 ret.push(tag);
-                removeWholeSubscribtion = res.value.subs.length === 0;
+                removeWholeSubscribtion = res.subs.length === 0;
             } else {
                 return [];
             }
@@ -855,8 +855,8 @@ class NotificationsStorage {
 
         if (removeWholeSubscribtion) {
             const res = await c.findOneAndDelete({ pageId, senderId });
-            if (res.value) {
-                ret.push(...res.value.subs);
+            if (res) {
+                ret.push(...res.subs);
             }
         }
 
