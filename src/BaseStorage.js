@@ -480,6 +480,25 @@ class BaseStorage {
 
         return h.digest('base64');
     }
+
+    /**
+     * Drop collection
+     *
+     * @returns {Promise}
+     */
+    async drop () {
+        const db = typeof this._mongoDb === 'function'
+            ? await this._mongoDb()
+            : this._mongoDb;
+
+        await db.dropCollection(this._collectionName)
+            .catch(() => {});
+
+        this._collection = null;
+        this._indexing = null;
+        this._shouldIndexBeforeRead = null;
+        this._shouldWaitForIndex = null;
+    }
 }
 
 module.exports = BaseStorage;
