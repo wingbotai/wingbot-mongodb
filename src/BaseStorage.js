@@ -7,30 +7,11 @@ const { ObjectId } = require('mongodb');
 const { strict: assert } = require('assert');
 const crypto = require('crypto');
 const defaultLogger = require('./defaultLogger');
+const getNestedObjects = require('./getNestedObjects');
 
 /** @typedef {import('mongodb').Db} Db */
-/** @typedef {import('mongodb').Collection} Collection */
+/** @typedef {import('mongodb').Document} Document */
 /** @typedef {import('mongodb').CreateIndexesOptions} CreateIndexesOptions */
-
-/**
- *
- * @param {any} obj
- * @param {boolean} nested
- * @param {string} [attr]
- * @param {object} [ret]
- * @returns {object}
- */
-function getNestedObjects (obj, nested, attr = null, ret = {}) {
-    if (typeof obj !== 'object' || !obj || nested === null || Array.isArray(obj)) {
-        Object.assign(ret, { [attr]: obj === undefined ? null : obj });
-    } else {
-        Object.entries(obj)
-            .forEach(([key, val]) => {
-                getNestedObjects(val, nested || null, attr ? `${attr}.${key}` : key, ret);
-            });
-    }
-    return ret;
-}
 
 /**
  *
@@ -49,6 +30,9 @@ function signReplacer (k, v) {
     return v;
 }
 
+/**
+ * @template T={} {Document}
+ */
 class BaseStorage {
 
     static netFailuresIntervalMs = 600000; // 10 minutes
@@ -108,7 +92,7 @@ class BaseStorage {
         this._log = log;
 
         /**
-         * @type {Collection|Promise<Collection>}
+         * @type {import('mongodb').Collection<T>|Promise<import('mongodb').Collection<T>>}
          */
         this._collection = null;
 
@@ -189,7 +173,7 @@ class BaseStorage {
     /**
      * Insert defalt document to DB
      *
-     * @param  {...{ _id: string|number|ObjectId }} objects
+     * @param  {...T} objects
      */
     addFixtureDoc (...objects) {
         this._fixtures.push(...objects);
@@ -241,17 +225,24 @@ class BaseStorage {
         return getNestedObjects(obj, nested, attr);
     }
 
+    /**
+     *
+     * @param {string} name
+     * @returns {Promise<import('mongodb').Collection<T>>}
+     */
     async _getOrCreateCollection (name) {
         const db = typeof this._mongoDb === 'function'
             ? await this._mongoDb()
             : this._mongoDb;
 
+        /** @type {import('mongodb').Collection<T>} */
         let collection;
 
         if (this._isCosmo) {
             // @ts-ignore
             const collections = await db.collections();
 
+            // @ts-ignore
             collection = collections
                 .find((c) => c.collectionName === name);
 
@@ -290,7 +281,7 @@ class BaseStorage {
      *
      * @protected
      * @param {boolean} [forRead]
-     * @returns {Promise<Collection>}
+     * @returns {Promise<import('mongodb').Collection<T>>}
      */
     async _getCollection (forRead = false) {
         if (this._collection === null) {
@@ -321,7 +312,7 @@ class BaseStorage {
     /**
      *
      * @param {object[]} indexes
-     * @param {Collection} collection
+     * @param {import('mongodb').Collection<T>} collection
      * @returns {Promise}
      */
     async _ensureIndexes (indexes, collection) {
@@ -456,7 +447,11 @@ class BaseStorage {
         return entries.reduce((o, key) => {
             let val = object[key];
             if (val !== null && typeof val === 'object') {
-                val = objectClone(val);
+                try {
+                    val = objectClone(val);
+                } catch (e) {
+                    val = JSON.parse(JSON.stringify(val, signReplacer));
+                }
             }
             return Object.assign(o, { [key]: val });
         }, {});

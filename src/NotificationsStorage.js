@@ -9,20 +9,21 @@ const defaultLogger = require('./defaultLogger');
 const { ObjectId } = mongodb;
 
 /**
- * @typedef Target {Object}
+ * @typedef {object} Target
  * @prop {string} senderId
  * @prop {string} pageId
+ * @prop {{ [key: string]: object }} [meta]
  */
 
 /**
- * @typedef Subscribtion {Object}
+ * @typedef {object} Subscribtion
  * @prop {string} senderId
  * @prop {string} pageId
  * @prop {string[]} subs
  */
 
 /**
- * @typedef Campaign {object}
+ * @typedef {object}  Campaign
  * @prop {string} id
  * @prop {string} name
  *
@@ -59,7 +60,7 @@ const { ObjectId } = mongodb;
  */
 
 /**
- * @typedef Task {Object}
+ * @typedef {object} Task
  * @prop {string} id
  * @prop {string} pageId
  * @prop {string} senderId
@@ -71,6 +72,21 @@ const { ObjectId } = mongodb;
  * @prop {number} [insEnqueue]
  * @prop {boolean} [reaction] - user reacted
  * @prop {number} [leaved] - time the event was not sent because user left
+ */
+
+/**
+ * @typedef {object} Subscription
+ * @prop {string} tag
+ * @prop {object} meta
+ */
+
+/**
+ * @typedef {object} SubscriptionData
+ * @prop {string} pageId
+ * @prop {string} senderId
+ * @prop {string[]} tags
+ * @prop {boolean} [remove]
+ * @prop {{ [key: string]: object }} [meta]
  */
 
 const MAX_TS = 9999999999999;
@@ -472,6 +488,7 @@ class NotificationsStorage {
         const c = await this._getCollection(this.taksCollection);
 
         const res = await c.findOne({
+            // @ts-ignore
             _id: ObjectId.isValid(taskId)
                 ? ObjectId.createFromHexString(taskId)
                 : taskId
@@ -489,6 +506,7 @@ class NotificationsStorage {
         const c = await this._getCollection(this.taksCollection);
 
         const res = await c.findOneAndUpdate({
+            // @ts-ignore
             _id: ObjectId.isValid(taskId)
                 ? ObjectId.createFromHexString(taskId)
                 : taskId
@@ -791,6 +809,66 @@ class NotificationsStorage {
 
     /**
      *
+     * @param {SubscriptionData[]} subscriptionData
+     * @param {boolean} [onlyToKnown=false]
+     * @returns {Promise}
+     */
+    async batchSubscribe (subscriptionData, onlyToKnown = false) {
+        const c = await this._getCollection(this.subscribtionsCollection);
+
+        const toSend = subscriptionData.filter((t) => t.tags.length !== 0);
+
+        while (toSend.length) {
+            const up = toSend.splice(0, 999);
+
+            await c.bulkWrite(
+                // @ts-ignore
+                up.map(({
+                    pageId, senderId, tags, meta = {}, remove
+                }) => {
+                    const set = Object.entries(meta);
+
+                    let addSet = {};
+
+                    if (remove) {
+                        addSet = {
+                            $set: Object.fromEntries(
+                                tags.map((t) => [`meta.${t}`, {}])
+                            )
+                        };
+                    } else if (set.length) {
+                        addSet = {
+                            $set: Object.fromEntries(
+                                set.map(([k, v]) => [`meta.${k}`, v])
+                            )
+                        };
+                    }
+
+                    return {
+                        updateOne: {
+                            filter: { senderId, pageId },
+                            update: {
+                                ...(remove
+                                    ? { $pullAll: { subs: tags } }
+                                    : { $addToSet: { subs: { $each: tags } } }),
+                                ...addSet
+                            },
+                            upsert: !remove && !onlyToKnown
+                        }
+                    };
+                }),
+                {
+                    ordered: false,
+                    writeConcern: {
+                        w: onlyToKnown ? 0 : 1
+                    }
+                }
+            );
+        }
+    }
+
+    /**
+     *
      * @param {string|string[]} senderId
      * @param {string} pageId
      * @param {string} tag
@@ -801,25 +879,13 @@ class NotificationsStorage {
         // !IMPORTANT: do not add a default value to the fourth parameter!
         const senderIds = Array.isArray(senderId) ? senderId : [senderId];
 
-        if (senderIds.length === 0) {
-            return;
-        }
-        const c = await this._getCollection(this.subscribtionsCollection);
-
-        await c.bulkWrite(
+        return this.batchSubscribe(
             senderIds.map((sid) => ({
-                updateOne: {
-                    filter: { senderId: sid, pageId },
-                    update: { $addToSet: { subs: tag } },
-                    upsert: !onlyToKnown
-                }
+                senderId: sid,
+                pageId,
+                tags: [tag]
             })),
-            {
-                ordered: false,
-                writeConcern: {
-                    w: onlyToKnown ? 0 : 1
-                }
-            }
+            onlyToKnown
         );
     }
 
@@ -840,6 +906,7 @@ class NotificationsStorage {
             const res = await c.findOneAndUpdate({
                 pageId, senderId, subs: tag
             }, {
+                // @ts-ignore
                 $pull: { subs: tag }
             }, {
                 returnDocument: 'after'
@@ -933,7 +1000,17 @@ class NotificationsStorage {
         while (hasNext) {
 
             const cursor = c.find(condition)
-                .project({ _id: 1, pageId: 1, senderId: 1 })
+                .project({
+                    _id: 1,
+                    pageId: 1,
+                    senderId: 1,
+                    ...(include.length === 0
+                        ? { meta: 1 }
+                        : Object.fromEntries(
+                            include.map((k) => [`meta.${k}`, 1])
+                        )
+                    )
+                })
                 .sort({ _id: 1 })
                 .skip(skip)
                 .limit(useLimit);
@@ -959,9 +1036,35 @@ class NotificationsStorage {
         }
 
         return Promise.resolve({
-            data: data.map(({ senderId, pageId: p }) => ({ senderId, pageId: p })),
+            data: data.map(({
+                senderId, pageId: p, meta
+            }) => ({
+                senderId, pageId: p, ...(meta ? { meta } : {})
+            })),
             lastKey: nextLastKey
         });
+    }
+
+    /**
+     * @param {string} senderId
+     * @param {string} pageId
+     * @returns {Promise<Subscription[]>}
+     */
+    async getSenderSubscriptions (senderId, pageId) {
+        const c = await this._getCollection(this.subscribtionsCollection);
+
+        const sub = await c.findOne({
+            senderId, pageId
+        }, { projection: { _id: 0, subs: 1, meta: 1 } });
+
+        if (sub) {
+            return sub.subs.map((tag) => ({
+                tag,
+                meta: (sub.meta && sub.meta[tag]) || {}
+            }));
+        }
+
+        return [];
     }
 
     /**
@@ -971,15 +1074,8 @@ class NotificationsStorage {
      * @returns {Promise<string[]>}
      */
     async getSenderSubscribtions (senderId, pageId) {
-        const c = await this._getCollection(this.subscribtionsCollection);
-
-        const sub = await c.findOne({ senderId, pageId }, { projection: { _id: 0, subs: 1 } });
-
-        if (sub) {
-            return sub.subs;
-        }
-
-        return [];
+        const subs = await this.getSenderSubscriptions(senderId, pageId);
+        return subs.map((s) => s.tag);
     }
 
     async getTags (pageId = null) {

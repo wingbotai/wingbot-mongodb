@@ -685,6 +685,63 @@ describe('<NotificationsStorage>', function () {
 
     });
 
+    describe('#batchSubscribe() & #getSenderSubscribtions()', () => {
+
+        it('subscribe and get', async () => {
+            await storage.batchSubscribe([
+                {
+                    senderId: 'ba',
+                    pageId: 'tch',
+                    tags: ['sasa', 'lele', 'x'],
+                    meta: {
+                        sasa: {
+                            foo: 'bar'
+                        },
+                        x: {
+                            x: 'x'
+                        }
+                    }
+                }
+            ]);
+
+            const s = await storage.getSenderSubscriptions('ba', 'tch');
+
+            assert.deepStrictEqual(s, [
+                {
+                    meta: {
+                        foo: 'bar'
+                    },
+                    tag: 'sasa'
+                },
+                {
+                    meta: {},
+                    tag: 'lele'
+                },
+                {
+                    tag: 'x',
+                    meta: {
+                        x: 'x'
+                    }
+                }
+            ]);
+
+            const x = await storage.getSubscribtions(['sasa'], [], 10);
+
+            assert.deepStrictEqual(x.data, [
+                {
+                    senderId: 'ba',
+                    pageId: 'tch',
+                    meta: {
+                        sasa: {
+                            foo: 'bar'
+                        }
+                    }
+                }
+            ]);
+        });
+
+    });
+
     describe('#getSubscribtions()', () => {
 
         beforeEach(async () => {
