@@ -12,7 +12,7 @@
  * @returns {object}
  */
 function getNestedObjects (obj, nested, attr = null, ret = {}) {
-    if (typeof obj !== 'object' || !obj || nested === null || Array.isArray(obj)) {
+    if (typeof obj !== 'object' || !obj || nested === null || Array.isArray(obj) || Object.keys(obj).length === 0) {
         Object.assign(ret, { [attr]: obj === undefined ? null : obj });
     } else {
         Object.entries(obj)
