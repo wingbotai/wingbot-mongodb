@@ -7,21 +7,24 @@ const { MongoClient } = require('mongodb');
 
 const CONNECTION_STRING = 'mongodb://127.0.0.1:27017';
 
-let settings;
-if (process.env.DB_TYPE === 'cosmos') {
-    try {
-        // @ts-ignore
-        settings = module.require('./dbSettings');
-    } catch (e) {
-        console.warn('missing test/dbSettings.js for cosmosdb'); // eslint-disable-line
+let dbSettings;
+try {
+    // @ts-ignore
+    dbSettings = module.require('./dbSettings');
+} catch (e) {
+    if (process.env.DB_TYPE === 'cosmos') {
+        throw new Error('missing test/dbSettings.js for cosmosdb');
     }
 }
 
-if (!settings) {
-    settings = {
-        db: CONNECTION_STRING,
-        options: {}
-    };
+let settings = {
+    url: CONNECTION_STRING,
+    options: {},
+    name: 'wingbot-mongodb-test'
+};
+
+if (dbSettings) {
+    settings = { ...settings, ...dbSettings };
 }
 
 /** @typedef {import('mongodb').Db} Db */
@@ -49,12 +52,12 @@ async function connect (disconnect = false) {
     }
 
     if (!connectedMongoDb) {
-        connectedMongoDb = new MongoClient(settings.db, settings.options)
+        connectedMongoDb = new MongoClient(settings.url, settings.options)
             .connect();
     }
 
     return connectedMongoDb
-        .then((connection) => connection.db('wingbot-mongodb-test'));
+        .then((connection) => connection.db(settings.name));
 }
 
 module.exports = connect;

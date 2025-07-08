@@ -19,6 +19,8 @@ node_modules
 /.nyc_output
 /html-report
 
+data
+
 # Dont remove, because it's used in tests
 
 test/dbSettings.js

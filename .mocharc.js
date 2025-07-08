@@ -8,7 +8,7 @@ module.exports = {
     extension: ['js'],
     package: '../package.json',
     reporter: 'spec',
-    timeout: 2000,
+    timeout: 10000,
     ui: 'bdd',
     recursive: true
 };
