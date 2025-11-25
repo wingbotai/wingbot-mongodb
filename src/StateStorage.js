@@ -8,6 +8,9 @@ const defaultLogger = require('./defaultLogger');
 
 const USER_INDEX = 'senderId_1_pageId_1';
 const LAST_INTERACTION_INDEX = 'lastInteraction_1';
+
+const COMPOUND_INDEX = 'senderId_1_pageId_1_lastInteraction_-1';
+
 const SEARCH = 'search-text';
 const NAME = 'name_1';
 
@@ -21,6 +24,8 @@ const NAME = 'name_1';
 /**
  * @typedef {object} StateCondition
  * @prop {string} [search]
+ * @prop {string[]} [senderIds]
+ * @prop {string} [pageId]
  */
 
 /** @typedef {import('mongodb').Db} Db */
@@ -59,6 +64,10 @@ class StateStorage extends BaseStorage {
                 { name: NAME }
             );
         } else {
+            this.addIndex(
+                { senderId: 1, pageId: 1, lastInteraction: -1 },
+                { name: COMPOUND_INDEX, unique: true }
+            );
             this.addIndex(
                 { '$**': 'text' },
                 { name: SEARCH }
@@ -200,6 +209,22 @@ class StateStorage extends BaseStorage {
         }
 
         const searchStates = typeof condition.search === 'string';
+
+        const filterSenderIds = Array.isArray(condition.senderIds);
+
+        const filterPageId = typeof condition.pageId === 'string';
+
+        if (filterSenderIds) {
+            Object.assign(useCondition, {
+                senderId: { $in: condition.senderIds }
+            });
+        }
+
+        if (filterPageId) {
+            Object.assign(useCondition, {
+                pageId: condition.pageId
+            });
+        }
 
         if (searchStates) {
             if (this._isCosmo) {
