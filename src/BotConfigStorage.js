@@ -11,8 +11,10 @@ try {
     // noop
 }
 
+/** @typedef {{ [key: string]: any } & { _id: string }} BaseConfig */
+
 /** @typedef {import('mongodb').Db} Db */
-/** @typedef {import('mongodb').Collection} Collection */
+/** @typedef {import('mongodb').Collection<BaseConfig>} Collection */
 
 const CONFIG_ID = 'config';
 

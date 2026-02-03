@@ -1,8 +1,9 @@
 {
   "name": "wingbot-mongodb",
-  "version": "4.2.5",
+  "version": "4.2.9",
   "description": "MongoDB storage for wingbot.ai",
   "main": "src/main.js",
+  "types": "types/main.d.ts",
   "scripts": {
     "test": "npm run test:lint && npm run test:coverage && npm run test:coverage:threshold",
     "test:unit": "mocha ./test/**/*.js",
@@ -11,7 +12,9 @@
     "test:coverage": "nyc --reporter=html mocha ./test && nyc report",
     "test:coverage:threshold": "nyc check-coverage --lines 80 --functions 73 --branches 75",
     "test:lint": "eslint ./src/**/*.js ./bin/**/*.js ./test/**/*.js ",
-    "doc": "node ./bin/makeApiDoc.js"
+    "doc": "node ./bin/makeApiDoc.js",
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -34,6 +37,7 @@
   },
   "homepage": "https://github.com/wingbotai/wingbot-mongodb#readme",
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "cross-env": "^7.0.3",
     "eslint": "^8.28.0",
     "eslint-config-airbnb": "^19.0.4",
@@ -47,6 +51,7 @@
     "mocha": "^10.1.0",
     "mongodb": "^6.1.0",
     "nyc": "^15.1.0",
+    "typescript": "^5.9.3",
     "wingbot": "^3.46.3"
   },
   "peerDependencies": {

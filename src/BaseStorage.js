@@ -14,6 +14,17 @@ const getNestedObjects = require('./getNestedObjects');
 /** @typedef {import('mongodb').CreateIndexesOptions} CreateIndexesOptions */
 
 /**
+ * @template T=ObjectId
+ * @typedef {object} CustomIdentifier
+ * @prop {T} _id
+ */
+
+/**
+ * @template {object} T
+ * @typedef {T & CustomIdentifier<ObjectId>} WithId
+ */
+
+/**
  *
  * @template T
  * @param {string} k
@@ -91,9 +102,8 @@ class BaseStorage {
         this._isCosmo = typeof isCosmo === 'number' || isCosmo;
         this._log = log;
 
-        /**
-         * @type {import('mongodb').Collection<T>|Promise<import('mongodb').Collection<T>>}
-         */
+        // eslint-disable-next-line max-len
+        /** @type {import('mongodb').Collection<WithId<T>>|Promise<import('mongodb').Collection<WithId<T>>>} */
         this._collection = null;
 
         this._indexes = [];
@@ -166,14 +176,18 @@ class BaseStorage {
         return e;
     }
 
+    /**
+     *
+     * @returns {Promise<import('mongodb').Collection<WithId<T>>>}
+     */
     preHeat () {
-        return this._getCollection();
+        return this._getCollection(false, true);
     }
 
     /**
      * Insert defalt document to DB
      *
-     * @param  {...T} objects
+     * @param  {...WithId<T>} objects
      */
     addFixtureDoc (...objects) {
         this._fixtures.push(...objects);
@@ -228,14 +242,14 @@ class BaseStorage {
     /**
      *
      * @param {string} name
-     * @returns {Promise<import('mongodb').Collection<T>>}
+     * @returns {Promise<import('mongodb').Collection<WithId<T>>>}
      */
     async _getOrCreateCollection (name) {
         const db = typeof this._mongoDb === 'function'
             ? await this._mongoDb()
             : this._mongoDb;
 
-        /** @type {import('mongodb').Collection<T>} */
+        /** @type {import('mongodb').Collection<WithId<T>>} */
         let collection;
 
         if (this._isCosmo) {
@@ -281,9 +295,10 @@ class BaseStorage {
      *
      * @protected
      * @param {boolean} [forRead]
-     * @returns {Promise<import('mongodb').Collection<T>>}
+     * @param {boolean} [forceIndexAwait=false]
+     * @returns {Promise<import('mongodb').Collection<WithId<T>>>}
      */
-    async _getCollection (forRead = false) {
+    async _getCollection (forRead = false, forceIndexAwait = false) {
         if (this._collection === null) {
             let c;
             try {
@@ -297,9 +312,11 @@ class BaseStorage {
             }
         }
 
+        const requiresIndexAwait = this._shouldWaitForIndex
+            && (!forRead || this._shouldIndexBeforeRead);
+
         if (this._indexing
-            && this._shouldWaitForIndex
-            && (!forRead || this._shouldIndexBeforeRead)) {
+            && (requiresIndexAwait || forceIndexAwait)) {
 
             const err = await this._indexing;
             this._indexing = false;
@@ -312,7 +329,7 @@ class BaseStorage {
     /**
      *
      * @param {object[]} indexes
-     * @param {import('mongodb').Collection<T>} collection
+     * @param {import('mongodb').Collection<WithId<T>>} collection
      * @returns {Promise}
      */
     async _ensureIndexes (indexes, collection) {

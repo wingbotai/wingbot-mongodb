@@ -3,8 +3,14 @@
  */
 'use strict';
 
+/**
+ * @typedef {object} StoredAttachment
+ * @prop {string} _id
+ * @prop {number} attachmentId
+ */
+
 /** @typedef {import('mongodb').Db} Db */
-/** @typedef {import('mongodb').Collection} Collection */
+/** @typedef {import('mongodb').Collection<StoredAttachment>} Collection */
 
 /**
  * Cache storage for Facebook attachments
@@ -69,7 +75,7 @@ class AttachmentCache {
     async saveAttachmentId (url, attachmentId) {
         const c = await this._getCollection();
 
-        await c.replaceOne({ _id: url }, { _id: url, attachmentId }, { upsert: true });
+        await c.replaceOne({ _id: url }, { attachmentId }, { upsert: true });
     }
 
 }

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "types",
+    "checkJs": true,
+    "strict": false, // Temporarily disable strict mode
+    "skipLibCheck": true, // Skip type checking for declaration files
+    "noImplicitAny": false, // Allow implicit 'any' types
+    "esModuleInterop": true, // Ensure compatibility with CommonJS modules
+    "resolveJsonModule": true // Allow importing JSON modules
+  },
+  "include": ["src/**/*.js"],
+  "typeRoots": ["./types", "./node_modules/@types"] // Include custom types
+}
