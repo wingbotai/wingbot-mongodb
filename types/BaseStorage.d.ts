@@ -1,6 +1,6 @@
 export = BaseStorage;
 /**
- * @template T={} {Document}
+ * @template T={Document}
  */
 declare class BaseStorage<T> {
     static netFailuresIntervalMs: number;
@@ -177,13 +177,10 @@ declare class BaseStorage<T> {
     drop(): Promise<any>;
 }
 declare namespace BaseStorage {
-    export { Db, Document, CreateIndexesOptions, CustomIdentifier, WithId };
+    export { Db, Document, CreateIndexesOptions, WithId };
 }
 import { ObjectId } from "mongodb";
 type Db = import("mongodb").Db;
 type Document = import("mongodb").Document;
 type CreateIndexesOptions = import("mongodb").CreateIndexesOptions;
-type CustomIdentifier<T> = {
-    _id: T;
-};
-type WithId<T extends unknown> = T & CustomIdentifier<ObjectId>;
+type WithId<T extends unknown> = import("mongodb").WithId<T>;

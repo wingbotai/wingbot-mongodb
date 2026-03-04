@@ -14,14 +14,8 @@ const getNestedObjects = require('./getNestedObjects');
 /** @typedef {import('mongodb').CreateIndexesOptions} CreateIndexesOptions */
 
 /**
- * @template T=ObjectId
- * @typedef {object} CustomIdentifier
- * @prop {T} _id
- */
-
-/**
  * @template {object} T
- * @typedef {T & CustomIdentifier<ObjectId>} WithId
+ * @typedef {import('mongodb').WithId<T>} WithId
  */
 
 /**
@@ -42,7 +36,7 @@ function signReplacer (k, v) {
 }
 
 /**
- * @template T={} {Document}
+ * @template T={Document}
  */
 class BaseStorage {
 
