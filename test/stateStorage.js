@@ -199,6 +199,61 @@ describe('<StateStorage>', function () {
             assert.strictEqual(lastKey, null);
         });
 
+        it('should sort fulltext search by last interaction', async () => {
+            storage = new StateStorage(mongodb);
+
+            await storage.saveState({
+                senderId: SENDER_ID,
+                pageId: PAGE_ID,
+                state: { text: 'shared search text' },
+                lastInteraction,
+                lock: 0
+            });
+            await storage.saveState({
+                senderId: SENDER_ID2,
+                pageId: PAGE_ID,
+                state: { text: 'shared search text' },
+                lastInteraction: lastInteraction2,
+                lock: 0
+            });
+
+            const { data } = await storage.getStates({
+                search: 'shared search text'
+            });
+
+            assert.strictEqual(data[0].senderId, SENDER_ID2);
+            assert.strictEqual(data[1].senderId, SENDER_ID);
+        });
+
+        it('should sort cosmos search by last interaction', async () => {
+            storage = new StateStorage(mongodb, 'states', console, true);
+
+            await storage.saveState({
+                senderId: SENDER_ID,
+                pageId: PAGE_ID,
+                name: 'hello alpha',
+                state: firstState,
+                lastInteraction,
+                lock: 0
+            });
+            await storage.saveState({
+                senderId: SENDER_ID2,
+                pageId: PAGE_ID,
+                name: 'hello beta',
+                state: secondState,
+                lastInteraction: lastInteraction2,
+                lock: 0
+            });
+
+            const { data } = await storage.getStates({
+                search: 'hello'
+            });
+
+            assert.strictEqual(data[0].senderId, SENDER_ID2);
+            assert.strictEqual(data[1].senderId, SENDER_ID);
+            assert(storage._indexes.some((i) => i.options.name === 'senderId_1'));
+        });
+
     });
 
     describe('#kill feature', () => {

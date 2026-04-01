@@ -13,6 +13,7 @@ const COMPOUND_INDEX = 'senderId_1_pageId_1_lastInteraction_-1';
 
 const SEARCH = 'search-text';
 const NAME = 'name_1';
+const SENDER = 'senderId_1';
 
 /**
  * @typedef {object} State
@@ -59,6 +60,10 @@ class StateStorage extends BaseStorage {
         this.logCollisionsAsErrors = false;
 
         if (isCosmo) {
+            this.addIndex(
+                { senderId: 1 },
+                { name: SENDER }
+            );
             this.addIndex(
                 { name: 1 },
                 { name: NAME }
@@ -247,7 +252,9 @@ class StateStorage extends BaseStorage {
             if (!this._isCosmo) {
                 cursor
                     .project({ score: { $meta: 'textScore' } })
-                    .sort({ score: { $meta: 'textScore' } });
+                    .sort({ score: { $meta: 'textScore' }, lastInteraction: -1 });
+            } else {
+                cursor.sort({ lastInteraction: -1 });
             }
         } else {
             cursor = c
