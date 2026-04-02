@@ -199,7 +199,7 @@ describe('<StateStorage>', function () {
             assert.strictEqual(lastKey, null);
         });
 
-        it('should sort fulltext search by last interaction', async () => {
+        it('should sort search matches by last interaction', async () => {
             storage = new StateStorage(mongodb);
 
             await storage.saveState({
@@ -219,6 +219,32 @@ describe('<StateStorage>', function () {
 
             const { data } = await storage.getStates({
                 search: 'shared search text'
+            });
+
+            assert.strictEqual(data[0].senderId, SENDER_ID2);
+            assert.strictEqual(data[1].senderId, SENDER_ID);
+        });
+
+        it('should ignore text score and sort search matches by newest first', async () => {
+            storage = new StateStorage(mongodb);
+
+            await storage.saveState({
+                senderId: SENDER_ID,
+                pageId: PAGE_ID,
+                state: { text: 'Bank Bank Bank exact' },
+                lastInteraction,
+                lock: 0
+            });
+            await storage.saveState({
+                senderId: SENDER_ID2,
+                pageId: PAGE_ID,
+                state: { text: 'Bank' },
+                lastInteraction: lastInteraction2,
+                lock: 0
+            });
+
+            const { data } = await storage.getStates({
+                search: 'Bank'
             });
 
             assert.strictEqual(data[0].senderId, SENDER_ID2);

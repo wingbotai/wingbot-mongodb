@@ -248,14 +248,8 @@ class StateStorage extends BaseStorage {
             cursor = c
                 .find(useCondition)
                 .limit(limit + 1)
-                .skip(skip);
-            if (!this._isCosmo) {
-                cursor
-                    .project({ score: { $meta: 'textScore' } })
-                    .sort({ score: { $meta: 'textScore' }, lastInteraction: -1 });
-            } else {
-                cursor.sort({ lastInteraction: -1 });
-            }
+                .skip(skip)
+                .sort({ lastInteraction: -1 });
         } else {
             cursor = c
                 .find(useCondition)
